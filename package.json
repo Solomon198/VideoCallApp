@@ -1,0 +1,46 @@
+{
+  "name": "videoCall",
+  "version": "0.0.1",
+  "private": true,
+  "scripts": {
+    "start": "node node_modules/react-native/local-cli/cli.js start",
+    "test": "jest"
+  },
+  "dependencies": {
+    "moment": "2.24.0",
+    "native-base": "^2.12.1",
+    "react": "16.6.3",
+    "react-native": "0.58.6",
+    "react-native-agora": "2.3.3-alpha.5",
+    "react-native-audio-recorder-player": "^2.1.4",
+    "react-native-audio-transcoder": "^0.3.0",
+    "react-native-dotenv": "^0.2.0",
+    "react-native-elements": "1.0.0-beta7",
+    "react-native-firebase": "^5.2.3",
+    "react-native-fs": "^2.13.3",
+    "react-native-geolocation-service": "^2.0.0",
+    "react-native-google-location": "^0.2.0",
+    "react-native-image-crop-picker": "^0.23.0",
+    "react-native-play-sound": "^1.0.24",
+    "react-native-ratings": "6.3.0",
+    "react-native-simple-dialogs": "1.0.0",
+    "react-native-splash-screen": "^3.2.0",
+    "react-native-thumbnail-video": "^0.1.2",
+    "react-native-timer-countdown": "2.0.3",
+    "react-native-vector-icons": "^6.4.0",
+    "react-native-youtube": "^1.1.0",
+    "react-navigation": "2.5.5"
+  },
+  "devDependencies": {
+    "@babel/runtime": "^7.3.4",
+    "babel-core": "7.0.0-bridge.0",
+    "babel-jest": "24.3.1",
+    "babel-polyfill": "^6.26.0",
+    "jest": "24.3.1",
+    "metro-react-native-babel-preset": "0.53.0",
+    "react-test-renderer": "16.6.3"
+  },
+  "jest": {
+    "preset": "react-native"
+  }
+}
