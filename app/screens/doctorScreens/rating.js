@@ -3,7 +3,6 @@ import {Container,Text,H1,Icon,Button,H3,Header,Body,Left,Title,Right,} from 'na
 import {AsyncStorage,StyleSheet,View,Slider,
     BackHandler,} from 'react-native';
 import { AirbnbRating } from 'react-native-ratings';
-import Toolbar from '../../components/Toolbar/Toolbar';
 import { Colors, Typography } from '../../styles';
 import firebase from 'react-native-firebase';
 import Charity from '../../screens/doctorScreens/charity';
@@ -303,7 +302,7 @@ export default class Ratings extends Component {
                                                          })
                             
                                                          ref.get().then((onSnapshot)=>{
-                                                             let userMoney = onSnapshot.exists?onSnapshot.data().amount:0;
+                                                             let userMoney = onSnapshot.data().amount?onSnapshot.data().amount:0;
                                                              let userNewBalance = ((parseInt(coins) - charityMoney)) + userMoney;
                             
                                                              let hospMoney = parseInt(coins) - charityMoney
@@ -397,16 +396,6 @@ export default class Ratings extends Component {
 
           <View style={styles.subContainer}>
                     <H1 style={styles.text}>Experience</H1>
-                    {this.state.average?
-                   <View>
-                       <Text note style={{fontWeight:"600",marginBottom:10}}>Average Rating</Text>
-                        <Button rounded style={{backgroundColor:Colors.primary}}>
-                                <Text>{this.state.average}</Text>
-                        </Button>
-                   </View>
-                   :
-                   <Text></Text>
-                }
                     <AirbnbRating
                         count={5}
                         defaultRating={this.state.rating}

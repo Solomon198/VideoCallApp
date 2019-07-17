@@ -250,7 +250,7 @@ export default class Ratings extends Component {
                              })
 
                              ref.get().then((onSnapshot)=>{
-                                 let userMoney = onSnapshot.exists?onSnapshot.data().amount:0;
+                                 let userMoney = onSnapshot.data().amount?onSnapshot.data().amount:0;
                                  let userNewBalance = ((parseInt(this.props.data.paid) - charityMoney)) + userMoney;
 
                                  let hospMoney = parseInt(this.props.data.paid) - charityMoney
@@ -402,19 +402,9 @@ export default class Ratings extends Component {
 
           <View style={styles.seperator}></View>
           <Text note style={styles.text}>How was the call quality ? </Text>
-            {this.state.average?
-               <View>
-                   <Text note style={{fontWeight:"600",marginBottom:10}}>Average Rating</Text>
-                    <Button rounded style={{backgroundColor:Colors.primary}}>
-                            <Text>{this.state.average}</Text>
-                    </Button>
-               </View>
-               :
-               <Text></Text>
-            }
             <AirbnbRating
                 count={5}
-                defaultRating={0}
+                defaultRating={this.state.rating}
                 size={30}
                 onFinishRating={(val)=> this.setState({rating:val},()=>this.saveRating(this.props.userId,this.props.docId))}
                 />   
