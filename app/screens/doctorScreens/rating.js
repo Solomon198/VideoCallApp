@@ -136,7 +136,6 @@ export default class Ratings extends Component {
         let access = this.state.uid+"_"+this.state.docKey;
         const {hospitalKey,docKey,charityId,charityName,doctorName,donationPercentage} = this.state;
         let transactionRef = firebase.firestore().collection("TransactionInfo").doc(access);
-
                 transactionRef.get().then((val)=>{
                     if(val.exists){
                         const {
@@ -225,8 +224,10 @@ export default class Ratings extends Component {
         const {hospitalKey,docKey,charityId,charityName,doctorName,donationPercentage} = this.state;
         let transactionRef = firebase.firestore().collection("TransactionInfo").doc(access);
 
-    
+           
                 transactionRef.get().then((val)=>{
+                    // return alert(val.exists)
+
                     if(val.exists){
                         const {
                             patReported,
@@ -296,7 +297,7 @@ export default class Ratings extends Component {
                                                          donationRef.get().then((snapshot)=>{
                                                              let donationAmount = snapshot.exists?snapshot.data().totalDonations:0;
                                                              let _totalDonation = parseInt(donationAmount) + parseInt(charityMoney);
-                                                             donationRef.set({name:doctorName,doctorKey:docKey,totalDontions:_totalDonation}).then(()=>{
+                                                             donationRef.set({name:doctorName,doctorKey:docKey,totalDonations:_totalDonation,hospitalKey:hospitalKey}).then(()=>{
                                                             
                                                              })
                                                          })
@@ -344,11 +345,15 @@ export default class Ratings extends Component {
     componentDidMount(){
             // this.handleBack();
             storage.getItem('user').then((val)=>{
+
                 let data = JSON.parse(val);
                 this.setState({data:data,doctorName:data.name,hospitalKey:data.hospitalKey});
+
             })
             storage.getItem("donationInfo").then((val)=>{
                 let data = JSON.parse(val);
+                const ref =  firebase.database().ref('/status/'+this.state.docKey);
+                  ref.set({name:this.state.docName,status:'busy'})
                 this.setState({uid:data.uid,docKey:data.docKey})
             })
     }    

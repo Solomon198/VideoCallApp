@@ -17,8 +17,8 @@ export default class Doctors extends Component {
        accountType:'patient',
        doctors:[
            
-        ]
-
+        ],
+      noDoctors:false,
     }       
 
 
@@ -33,30 +33,64 @@ export default class Doctors extends Component {
       var db = database.collection("doctors").doc(this.state.data.hospital.key).collection('credentials')
              
               
-      db.get().then((querySnapshot)=>{        
-        let docarray = [];    
+      db.onSnapshot((querySnapshot)=>{        
+        let docarray = [];     
             querySnapshot.forEach(function(doc) {
-                                    
-                  docarray.push({
-                      name: doc.data().firstName + ' ' + doc.data().lastName,
-                      key: doc.id ,
-                      price:doc.data().price,
-                      youtube:doc.data().youtube?doc.data().youtube:[],
-                      bio:doc.data().bio?doc.data().bio:'',
-                      photo:doc.data().photo?doc.data().photo:''
-                  })               
+                  let info = {
+                    name: doc.data().firstName + ' ' + doc.data().lastName,
+                    key: doc.id ,
+                    price:doc.data().price,
+                    youtube:doc.data().youtube?doc.data().youtube:[],
+                    bio:doc.data().bio?doc.data().bio:'',
+                    photo:doc.data().photo?doc.data().photo:'',
+                    paused:doc.data().paused,
+                    incomplete:false
+                }      
+                  if(!info.name || info.youtube.length < 1 || !info.bio || !info.photo){
+                      info.incomplete = true;
+                  }
+
+                 if(info.paused || info.incomplete){
+                     //do nothing
+                 }else{
+                    docarray.push(info)
+                 }
              });                              
         this.setState({                  
-            doctors:docarray  
+            doctors:docarray,
+            noDoctors:docarray.length < 1 ? true:false
         })    
          
         
     },(err)=>alert('error reading dataBase'),()=>alert('completes'))
     }    
-
+    // ,,,,
     //Navigate to set appointments with user credentials
     nextNavigation(param){
-        this.props.navigation.navigate('SetAppointMent',{doctor:param,data:this.state.data});
+        let data = {};
+        data["doctorName"] = param.name;
+        data["doctorKey"]  = param.key;
+        data["price"]      = param.price;
+        data["doctorPhoto"] = param.photo;
+        data["doctorBio"] = param.bio;
+        data["youtubeIds"] = param.youtube;
+        data["hospitalKey"] = this.state.data.hospital.key;
+        data["hospitalName"] = this.state.data.hospital.name;
+        data["userName"]  = this.state.data.user.name;        
+
+        this.props.navigation.navigate('SetAppointMent',data);
+    }
+
+
+    showLoadingStatus(){
+        if(this.state.noDoctors){
+            return(
+                <View style={{flex:1,justifyContent:'center',alignContent:'center',alignItems:'center'}}>
+                    <Text>No Doctor Available</Text>
+                </View>
+            )
+        }
+        return <Loading show={true}/>
     }
 
    
@@ -68,17 +102,15 @@ export default class Doctors extends Component {
                     <Toolbar canGoBack goBack={()=>this.props.navigation.goBack()} title='Doctors'/>               
                     {this.state.doctors.length > 0?
                         <ListWithImage 
-                        rightItem={true}
-                        iconText={true}
-                        iconRightName='logo-usd'
                         data = {this.state.doctors}
                         onPress={(item)=> this.nextNavigation(item)}
-                        textPropertyName={'price'}
-                        iconColor={Colors.iconColor}   
-                        showItem={["name","key"]}
+                        iconColor={Colors.white}    
+                        showItem={["name"]}
+                        noDoctors={this.state.noDoctors}
                       />
                       :
-                      <Loading show={true}/>
+                      
+                      this.showLoadingStatus()
                     }
           </Container>
         )

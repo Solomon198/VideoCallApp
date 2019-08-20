@@ -1,10 +1,15 @@
 import React,{Component} from 'react'
-import {View,Container,Text,Input,Item,Form,Icon,Button,} from 'native-base'
-import {TouchableHighlight,AsyncStorage,Modal,PermissionsAndroid,StyleSheet} from 'react-native'
+import {View,Container,Item,Form,Icon,} from 'native-base'
+import {TouchableHighlight,AsyncStorage,Modal,PermissionsAndroid,StyleSheet,StatusBar,TouchableNativeFeedback} from 'react-native'
 import * as firebase from 'react-native-firebase';
 import { toast } from '../../components/toast';
 import { Loading } from '../../components/Loader/loader';
 import { Colors } from '../../styles';
+import { Text, Layout ,Input,Button} from 'react-native-ui-kitten';
+import Feather from '../../components/icons/feather'
+import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view'
+
+
 
 const storage = AsyncStorage;
 
@@ -184,17 +189,34 @@ export default class Login extends Component {
     _doctorForm(){
         return(
             <Form style={styles.form}>
-            <Item  >     
-             <Icon style={styles.textColor} name='person'/>
-             <Input placeholderTextColor={Colors.placeHolderColor} style={styles.textColor} onChangeText={(text)=>this.setState({name:text})} placeholder="Username" />
-            </Item>
-            <Item>
-            <TouchableHighlight onPress={()=>this.setState({secureTextEntry:!this.state.secureTextEntry})}>
-               <Icon style={styles.textColor} name={this.state.secureTextEntry?'eye-off':'eye'}/>
-            </TouchableHighlight>
-            <Input  placeholderTextColor={Colors.placeHolderColor} style={styles.textColor}  secureTextEntry={this.state.secureTextEntry} onChangeText={(text)=>this.setState({password:text})} placeholder="Password" />
-            </Item>
-    </Form>    
+
+               <Input 
+               placeholderTextColor={Colors.placeHolderColor} 
+               style={styles.inputStyle} 
+               value={this.state.name}
+               underlineColorAndroid={Colors.lightGray}
+               onChangeText={(text)=>this.setState({name:text})} 
+               placeholder="USERNAME" 
+               clearButtonMode="never"
+               onSubmitEditing={(e)=>e.preventDefault()}
+               icon={()=>
+                <Feather style={[styles.textColor,{fontSize:23}]} name="mail"/>  }           
+                />
+
+               
+              <Input 
+                  clearButtonMode="never"
+                  value={this.state.password}
+                  placeholderTextColor={Colors.placeHolderColor} 
+                  style={styles.inputStyle} 
+                  underlineColorAndroid={Colors.lightGray}
+                  secureTextEntry={this.state.secureTextEntry} 
+                  icon={()=><TouchableNativeFeedback onPress={()=>this.setState({secureTextEntry:!this.state.secureTextEntry})}>
+                  <Feather style={[styles.textColor,{fontSize:23}]} name={this.state.secureTextEntry?'eye-off':'eye'}/>
+               </TouchableNativeFeedback>}
+                  onChangeText={(text)=>this.setState({password:text})} placeholder="PASSWORD" />
+        
+               </Form>    
         )
     }
 
@@ -214,17 +236,34 @@ export default class Login extends Component {
     _clientForm(){
         return(
           <Form style={styles.form}>
-            <Item bordered={false} >     
-            <Icon style={styles.textColor} name='mail'/>
-            <Input placeholderTextColor={Colors.placeHolderColor} style={styles.textColor} onChangeText={(text)=>this.setState({name:text})} placeholder="Email" />
-            </Item>
-            <Item bordered={false}>
-            <TouchableHighlight onPress={()=>this.setState({secureTextEntry:!this.state.secureTextEntry})}>
-               <Icon style={styles.textColor} name={this.state.secureTextEntry?'eye-off':'eye'}/>
-            </TouchableHighlight>
+           
+            <Input 
+               placeholderTextColor={Colors.placeHolderColor} 
+               style={styles.inputStyle} 
+               value={this.state.name}
+               onChangeText={(text)=>this.setState({name:text})} 
+               placeholder="EMAIL" 
+               underlineColorAndroid={Colors.lightGray}
+               clearButtonMode="never"
+               onSubmitEditing={(e)=>e.preventDefault()}
+               icon={()=>
+               <Feather style={[styles.textColor,{fontSize:23}]} name="mail"/>  }           
+               />
 
-              <Input placeholderTextColor={Colors.placeHolderColor} style={styles.textColor} secureTextEntry={this.state.secureTextEntry} onChangeText={(text)=>this.setState({password:text})} placeholder="Password" />
-            </Item>
+          
+
+              <Input 
+                  clearButtonMode="never"
+                  underlineColorAndroid={Colors.lightGray}
+                  value={this.state.password}
+                  placeholderTextColor={Colors.placeHolderColor} 
+                  style={styles.inputStyle} 
+                  secureTextEntry={this.state.secureTextEntry} 
+                  icon={()=><TouchableHighlight style={{backgroundColor:'#fff'}} onPress={()=>this.setState({secureTextEntry:!this.state.secureTextEntry})}>
+                  <Feather style={[styles.textColor,{fontSize:23}]} name={this.state.secureTextEntry?'eye-off':'eye'}/>
+               </TouchableHighlight>}
+                  onChangeText={(text)=>this.setState({password:text})} placeholder="PASSWORD" />
+         
          </Form>    
         )
     }
@@ -243,31 +282,55 @@ export default class Login extends Component {
     render(){
         
         return(      
-         
+          <KeyboardAwareScrollView>
           <Container style={styles.container}>
-           <View style={styles.subContainer}>
+           <Container style={styles.subContainer}>
+                <StatusBar backgroundColor={Colors.primary} />
+                <Text style={{color:Colors.primary,marginBottom:10}} category="h1">Login to  your account</Text>
                 {this.renderForm()}    
-                {this.loader()}             
-                <Button onPress={()=>this.login({username:this.state.name,password:this.state.password,accountType:this.state.accountType})}  block style={styles.btn}>
-                    <Text style={styles.textColor}>Sign In</Text>
-                </Button> 
-
-                <Button transparent onPress={()=>this.props.navigation.navigate('RessetPassword')}  block style={styles.btn2}>
-                    <Text style={styles.textColor}>Foggot Password?</Text>
+                {this.loader()}   
+                
+                <Button 
+                   status="danger" 
+                   style={{alignSelf:"flex-end",marginTop:0}}  
+                   appearance="ghost" 
+                   onPress={()=>this.props.navigation.navigate('RessetPassword')}  >
+                    Foggot Password?
                 </Button>
-                  
-          </View>
-          {this.state.accountType == 'patient'?
-              <Button onPress={()=>this.props.navigation.navigate('SignUp')}  block style={styles.btn}>
-              <Text style={styles.textColor}>Sign Up</Text>
+
+                <Button
+                   size="large" status="success" 
+                   style={{width:200,borderRadius:50,alignSelf:'center',marginTop:10}}
+                   onPress={()=>this.login({username:this.state.name,password:this.state.password,accountType:this.state.accountType})}>
+                   Login
+                </Button>    
+
+         {this.state.accountType == 'patient'?
+              <Button style={{marginTop:10}} size="large" appearance="ghost" status="primary" onPress={()=>this.props.navigation.navigate('SignUp')} >
+                 Create an account
              </Button> :<Text></Text>
-          }
+          } 
+          </Container>
+         <Text style={styles.terms}>By continuing, i accept the terms of <Text style={styles.link}>services,</Text> <Text style={styles.link}>community guidelines</Text> and i have read the <Text style={styles.link}>Privacy policy</Text></Text>
          </Container>
+         </KeyboardAwareScrollView>
+
         )  
     }
 } 
 
 const styles = StyleSheet.create({
+    terms:{
+        textAlign:"center",
+        padding:10,
+        color:Colors.darkGray,
+        marginLeft:20,
+        marginRight:20,
+        fontWeight:'300'},
+    link:{
+        color:Colors.primary,
+        fontWeight:"300"
+    },
     btn2:{
         margin:15,
         borderRadius:4
@@ -275,23 +338,32 @@ const styles = StyleSheet.create({
     btn:{
         margin:15,
         borderRadius:4,
-        backgroundColor:Colors.overLay
+        backgroundColor:Colors.btnColor
     },
     subContainer:{
         flex:1,
+        marginLeft:20,  
+        marginRight:20,
+        marginTop:10,
         justifyContent:'center',
         alignContent:'center'
     },
     container:{
         flex:1,
-        justifyContent:'center',
-        alignContent:'center',
         backgroundColor:Colors.containers},
     textColor:{
         color:Colors.baseText
      },
+    
    form:{
        marginRight:10,
        marginBottom:25
+    }
+    ,
+    inputStyle:{
+      marginTop:10,
+      backgroundColor:Colors.white,
+      borderWidth:0,
+      borderColor:Colors.white
     }
 })

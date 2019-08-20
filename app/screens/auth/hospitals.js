@@ -4,7 +4,7 @@ import * as firebase from 'react-native-firebase';
 import {AsyncStorage} from 'react-native'
 import Toolbar from '../../components/Toolbar/Toolbar';
 import { Colors } from '../../styles';
-import { ListWithIcon } from '../../components/RenderList/ListComponents';
+import { ListWithIcon, ListWithImage } from '../../components/RenderList/ListComponents';
 import { Loading } from '../../components/Loader/loader';
 
 const storage = AsyncStorage;
@@ -68,15 +68,15 @@ export default class Hospitals extends Component {
     render(){
     let name = this.state.user?this.state.user.name:''
         return(          
-          <Container style={{backgroundColor:Colors.containers}}>    
+          <Container style={{backgroundColor:Colors.white}}>    
                       <Toolbar title='Hospitals'/>                      
                       {this.state.hospitals.length > 0?
-                      <ListWithIcon
+                      <ListWithImage
                         data = {this.state.hospitals}
                         onPress={(item)=>this.nextNavigation(item)}
                         iconLeftName='medical'
                         iconColor={Colors.iconColor}
-                        showItem ={['name','key']}
+                        showItem ={['name']}
                        />
                     :
                       <Loading show={true}/>

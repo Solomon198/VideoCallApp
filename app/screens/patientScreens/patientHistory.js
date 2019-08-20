@@ -39,11 +39,11 @@ export default class PatientHistory extends Component {
             let data = JSON.parse(val);
             this.setState({user:data},()=>{
                 var database = firebase.firestore();    
-                var db = database.collection("users").doc(data.uid).collection('history')
-                       
+                var db = database.collection("users").doc(data.uid).collection('history').limit(40)
+                          
                 
                     
-              db.get().then((querySnapshot)=>{                    
+              db.onSnapshot((querySnapshot)=>{                    
                   let docarray = [];        
                       querySnapshot.forEach((doc)=>{   
                             docarray.push({
@@ -53,7 +53,8 @@ export default class PatientHistory extends Component {
                                 duration:doc.data().duration
     
                             })    
-                       });                      
+                       });   
+                       
                   this.setState({                  
                       history:docarray,
                       noHistory:docarray.length > 0?false:true
@@ -90,11 +91,12 @@ export default class PatientHistory extends Component {
                           <ListWithImage 
                           rightItem={true}
                           onPress={()=> ''}
-                          iconRightName='call'
                           format
+                          dateRight
                           data = {this.state.history}
                           iconColor={Colors.iconRedColor}   
-                          showItem={["name","date","key","duration"]}
+                          showItem={["name","duration"]}
+                          location
                         />
                      
                       :

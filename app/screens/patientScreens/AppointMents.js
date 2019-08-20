@@ -13,7 +13,7 @@ import {Loading} from '../../components/Loader/loader'
 import { deleteDirectory, permissionCheck, startRecorder, AppStatus } from '../../Utils/functions';
 
 
-
+     
 
 
 const storage = AsyncStorage;
@@ -40,7 +40,11 @@ export default class AppointMents extends Component {
     noAppointMents:false,
     showAdd:false,
     uid:firebase.auth().currentUser.uid,
-    finishRating:false
+    finishRating:false,
+    firstName:'',
+    LastName:'',
+    location:'',
+    occupation:''
 
     } 
     
@@ -106,7 +110,9 @@ export default class AppointMents extends Component {
         ...item
       }
       let wrapData = JSON.stringify(videoData);
-      dataBase.ref(`status/${item.channel}/`).once("value",(onSnapshot)=>{
+      const statusRef =  dataBase.ref(`status/${item.channel}/`);
+    
+     statusRef.once("value",(onSnapshot)=>{
         if(!onSnapshot.exists()) return  storage.setItem('videoData',wrapData).then((val)=>{
           return           toast('Doctor is offline') ;
          
@@ -125,6 +131,8 @@ export default class AppointMents extends Component {
           }).catch((err)=>{
             //
           })
+ 
+          
           this.startCall(item)    
         }
       })
@@ -133,10 +141,11 @@ export default class AppointMents extends Component {
 
     //This send the signals to the doctor with some info about the user it is invoked by the triggercall methode
     startCall(item){
-        const user = firebase.auth().currentUser
+        const user = firebase.auth().currentUser;
+        const userName = this.state.firstName + ' ' + this.state.lastName;
         const randomNumber = Math.round(Math.random() * 1000000);   
-        dataBase.ref(`listeners/${item.channel}/`).set({callerName:this.state.user.name,added:randomNumber,online:true,addTime:false,endCall:false,uid:user.uid,photo:user.photoURL}).then((val)=>{    
-          this.setState({showLive:true,channel:item.channel,item:item,callerName:item.name,docKey:item.channel});
+        dataBase.ref(`listeners/${item.channel}/`).set({callerName:userName,added:randomNumber,online:true,addTime:false,endCall:false,uid:user.uid,photo:user.photoURL,occupation:this.state.occupation,location:this.state.location}).then((val)=>{    
+          this.setState({showLive:true,channel:item.channel,item:item,callerName:userName,docKey:item.channel});
           this.props.navigation.navigate('CallStack');
           storage.setItem("docId",item.channel);
         }).catch((err)=>this.setState({modal:false}))
@@ -144,14 +153,30 @@ export default class AppointMents extends Component {
 
        
     componentDidMount(){
+        var database = firebase.firestore();   
+
         storage.getItem('user').then((val)=>{
             let data = JSON.parse(val);
             this.setState({user:data},()=>{
                
               
-              
+                //getting user name
+                let $ref = database.collection('users').doc(firebase.auth().currentUser.uid).collection('personalInfo').doc('info');
+
+                $ref.onSnapshot((onSnapshot)=>{
+                   if(!onSnapshot.exists)return false;
+
+                   let data;
+                   data =   onSnapshot.data();
+                   this.setState({
+                     firstName:data.firstName,
+                     lastName:data.lastName,
+                     location:data.location,
+                     occupation:data.occupation, 
+                   })   
+                })
+
                 //getting appointments from firebase and listnening for changes
-                var database = firebase.firestore();   
                 let uid = firebase.auth().currentUser.uid;
                        
                 let appointments = database.collection('Appointments').where("patId","==",uid)
@@ -175,7 +200,8 @@ export default class AppointMents extends Component {
                                 docPhoto:doc.data().docPhoto,
                                 userPhoto:doc.data().userPhoto,
                                 patName:doc.data().patName,
-                                docName:doc.data().docName
+                                docName:doc.data().docName,
+                                date:doc.data().date
 
 
                             })    
@@ -256,13 +282,14 @@ export default class AppointMents extends Component {
                            data = {this.state.appointments}
                            onPress={(item)=> this.checkPermission(item)}
                            status = {true}
+                           dateRight
                           //  this.getColorForPresence(item)
+                           location
                            getBgColor={(item)=> this.getColorForPresence(item)}
                            leftItem
-                           iconRightName='call'
                            degree = '270deg'
                            iconColor={Colors.forestgreen}
-                           showItem={["name","key","date","time","hospital"]}
+                           showItem={["name"]}
                          />
                      
                        : 

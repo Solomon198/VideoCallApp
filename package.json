@@ -7,6 +7,7 @@
     "test": "jest"
   },
   "dependencies": {
+    "@eva-design/eva": "^1.0.1",
     "moment": "2.24.0",
     "native-base": "^2.12.1",
     "react": "16.6.3",
@@ -21,15 +22,22 @@
     "react-native-geolocation-service": "^2.0.0",
     "react-native-google-location": "^0.2.0",
     "react-native-image-crop-picker": "^0.23.0",
+    "react-native-keyboard-aware-scroll-view": "^0.8.0",
     "react-native-play-sound": "^1.0.24",
     "react-native-ratings": "6.3.0",
     "react-native-simple-dialogs": "1.0.0",
     "react-native-splash-screen": "^3.2.0",
     "react-native-thumbnail-video": "^0.1.2",
     "react-native-timer-countdown": "2.0.3",
+    "react-native-ui-kitten": "^4.1.0",
     "react-native-vector-icons": "^6.4.0",
     "react-native-youtube": "^1.1.0",
     "react-navigation": "2.5.5"
+  },
+  "rnpm": {
+    "assets": [
+      "./assets/fonts/"
+    ]
   },
   "devDependencies": {
     "@babel/runtime": "^7.3.4",

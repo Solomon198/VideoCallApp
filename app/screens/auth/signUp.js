@@ -1,12 +1,17 @@
 import React,{Component} from 'react'
-import {View,Container,Text,Input,Item,Form,Icon,Button,Spinner} from 'native-base'
-import {AsyncStorage,Modal,StyleSheet} from 'react-native'
+import {View,Container,Item,Form,Icon,Spinner} from 'native-base'
+import {AsyncStorage,Modal,StyleSheet,TouchableNativeFeedback} from 'react-native'
 import * as firebase from 'react-native-firebase';
 import { toast } from '../../components/toast';
 import Geolocation from 'react-native-geolocation-service';
 import { GEOCODING_API_KEY,GOOGLE_GEOLOCATION_URL} from 'react-native-dotenv'
 import { Loading } from '../../components/Loader/loader';
+import FontAwsome from '../../components/icons/fontawsome'
+import Octicons from '../../components/icons/octicons'
 import { Colors } from '../../styles';
+import { Text, Layout ,Input,Button} from 'react-native-ui-kitten';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view'
+
    
 
 const storage = AsyncStorage;
@@ -159,65 +164,120 @@ export default class SignUp extends Component {
     render(){
         
         return(      
-         
           <Container style={styles.container}>
            {this.loader()}
+
            <Form style={styles.form}>
+           <Text style={{color:Colors.primary,marginBottom:10,marginTop:10}} category="h2">Create account</Text>
+
                         <View style={styles.inputContainer}>
                         <View  style={styles.inputSubContainer}>
-                            <Item  >     
-                            <Input placeholderTextColor={Colors.placeHolderColor} onChangeText={(text)=>this.setState({firstName:text})} placeholder="First name" />
-                            </Item>
+                             <Input 
+                                placeholderTextColor={Colors.placeHolderColor} 
+                                style={styles.inputStyle} 
+                                value={this.state.firstName}
+                                onChangeText={(text)=>this.setState({firstName:text})} 
+                                placeholder="First name" 
+                                clearButtonMode="never"
+                                underlineColorAndroid={Colors.lightGray}
+                                onSubmitEditing={(e)=>e.preventDefault()}
+                                // icon={()=>
+                                //     <FontAwsome style={[styles.textColor,{fontSize:23}]} name="user-o"/>
+                                // }
+                                    />
                          </View>
                         
                     
                           <View  style={styles.inputSubContainer}>
-                            <Item  >     
-                            <Input placeholderTextColor={Colors.placeHolderColor} onChangeText={(text)=>this.setState({lastName:text})} placeholder="Last name" />
-                            </Item>
+                          <Input 
+                                placeholderTextColor={Colors.placeHolderColor} 
+                                style={styles.inputStyle} 
+                                value={this.state.lastName}
+                                onChangeText={(text)=>this.setState({lastName:text})} 
+                                placeholder="last name" 
+                                underlineColorAndroid={Colors.lightGray}
+                                clearButtonMode="never"
+                                onSubmitEditing={(e)=>e.preventDefault()}
+                            //     icon={()=>
+                            //     <FontAwsome style={[styles.textColor,{fontSize:23}]} name="user-o"/>
+                            // }
+                            /> 
+                           
                          </View>
                         </View>
                         
                         <View  style={styles.inputSubContainer3}>
-                            <Item  >     
-                            <Input placeholderTextColor={Colors.placeHolderColor} onChangeText={(text)=>this.setState({email:text})} placeholder="Email" />
-                            </Item>
+
+                        <Input 
+                                placeholderTextColor={Colors.placeHolderColor} 
+                                style={styles.inputStyle} 
+                                value={this.state.email}
+                                onChangeText={(text)=>this.setState({email:text})} 
+                                placeholder="Email" 
+                                underlineColorAndroid={Colors.lightGray}
+                                clearButtonMode="never"
+                                onSubmitEditing={(e)=>e.preventDefault()}
+                                // icon={()=>
+                                // <Octicons style={[styles.textColor,{fontSize:23}]} name="mail"/>
+                            // }
+                            />
                          </View>
 
                          <View  style={styles.inputSubContainer2}>
-                            <Item  >     
-                            <Input placeholderTextColor={Colors.placeHolderColor} secureTextEntry={true} onChangeText={(text)=>this.setState({password:text})} placeholder="Password" />
-                            </Item>
+
+                         <Input 
+                                placeholderTextColor={Colors.placeHolderColor} 
+                                style={styles.inputStyle} 
+                                value={this.state.password}
+                                onChangeText={(text)=>this.setState({password:text})} 
+                                placeholder="password" 
+                                secureTextEntry
+                                underlineColorAndroid={Colors.lightGray}
+                                
+                                clearButtonMode="never"
+                                onSubmitEditing={(e)=>e.preventDefault()}
+                            />
                          </View>
 
-                         <View  style={styles.inputSubContainer2}>
-                            <Item  >     
-                            <Input placeholderTextColor={Colors.placeHolderColor} secureTextEntry={true} onChangeText={(text)=>this.setState({occupation:text})} placeholder="Occupation" />
-                            </Item>
-                         </View>
-                         <View style={styles.locationContainer}>
+                        
+                         {/* <View style={styles.locationContainer}>
                              {this.state.city && this.state.state ? <View style={styles.greenDot}></View>:<Text></Text>}
                              <Text style={styles.cityPosition}>{this.state.state + ','} {this.state.city}</Text>
                          </View>
-                         <Button onPress={()=>this.getLocation()} block iconLeft light  style={styles.btn}>
-                              {
-                                  this.state.gettingLocation?
-                                       <Spinner color={Colors.forestgreen}/> :
-                                     <Icon style={styles.iconStyle} name='pin'/>
-
-                              }
-
-
-                             <Text style={styles.textStyle}>Set Location</Text>
+                         <Button
+                            status="primary"
+                            icon={()=> this.state.gettingLocation?
+                                <Spinner color={Colors.white}/> :
+                              <Icon style={styles.iconStyle} name='pin'/>}
+                            onPress={()=>this.getLocation()}>
+                             Set Location
                          </Button>
+
+                         <View  style={styles.inputSubContainer2}>
+                         <Input 
+                                placeholderTextColor={Colors.placeHolderColor} 
+                                style={styles.inputStyle} 
+                                value={this.state.occupation}
+                                label="OCCUPATION"
+                                
+                                onChangeText={(text)=>this.setState({occupation:text})} 
+                                placeholder="Occupation" 
+                                clearButtonMode="never"
+                                onSubmitEditing={(e)=>e.preventDefault()}
+                            />
+                         </View> */}
                 
             
            
            </Form>    
           
-              <Button onPress={()=>this.validation()}  block style={styles.btn2}>
-              <Text style={styles.textStyle} >Create Account</Text>
-             </Button>
+           <Button
+                   status="success" 
+                   style={{width:200,borderRadius:50,alignSelf:'center',marginTop:15,marginBottom:10}}
+                   onPress={()=>this.validation()}>
+                   Sign Up
+                </Button>  
+         <Text style={{textAlign:'center',padding:5,marginTop:10}}>Have an account? <Text  onPress={()=>this.props.navigation.goBack()}  style={styles.link}>Log in</Text></Text> 
          </Container>
         )
     }
@@ -225,6 +285,16 @@ export default class SignUp extends Component {
 
 
 const styles = StyleSheet.create({
+    link:{
+        color:Colors.primary,
+        fontWeight:"300"
+    },
+    inputStyle:{
+        marginTop:15,
+        backgroundColor:Colors.white,
+        borderWidth:0,
+        borderColor:Colors.white
+      },
     btn2:{
         margin:15,
         borderRadius:4,
@@ -246,7 +316,7 @@ const styles = StyleSheet.create({
     locationContainer:{
         flexDirection:'row',
         alignItems:'center',
-        margin:10,
+        margin:5,
         flex:1,
         alignContent:'center'
     },
@@ -254,39 +324,37 @@ const styles = StyleSheet.create({
         color:Colors.iconColor
     },
     iconStyle:{
-        color:Colors.iconColor
+        color:Colors.white,
+        fontSize:20
     },
     inputSubContainer3:{
-        borderColor:Colors.borderColor,
-        borderWidth:1,
         margin:2,
         borderRadius:10,
-        marginBottom:10
+        marginBottom:6
     },
     inputSubContainer2:{
-        borderColor:Colors.borderColor,
-        borderWidth:1,
-        marginBottom:10,
+        marginBottom:6,
         borderRadius:10
     },
     inputSubContainer:{
-        borderColor:Colors.borderColor,
-        borderWidth:1,
         margin:2,
         flex:1,
         borderRadius:10
     },
     inputContainer:{
         flexDirection:'row',
-        marginBottom:10},
+        marginBottom:6},
    container:{
        flex:1,
-       backgroundColor:Colors.containers
+       backgroundColor:Colors.containers,
+       justifyContent:'center',
+       alignContent:'center'
     },
    form:{
-       marginLeft:10,
+       marginLeft:20,
        marginBottom:10,
-       marginRight:10,
-       marginTop:100
+       marginRight:20,
+       justifyContent:'center',
+       alignContent:'center'
     },
 })

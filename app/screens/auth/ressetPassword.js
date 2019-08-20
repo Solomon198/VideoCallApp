@@ -1,11 +1,12 @@
 import React,{Component} from 'react'
-import {Container,Text,Input,Item,Form,H1,Button} from 'native-base'
-import {Modal,StyleSheet} from 'react-native'
+import {Container,Icon,Form,H1} from 'native-base'
+import {Modal,StyleSheet,StatusBar} from 'react-native'
 import * as firebase from 'react-native-firebase';
 import { toast } from '../../components/toast';
 import { Loading } from '../../components/Loader/loader';
 import { Colors } from '../../styles';
-
+import { Text, Layout ,Input,Button} from 'react-native-ui-kitten';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view'
 
 export default class RessetPassword extends Component {
     constructor(props){
@@ -59,22 +60,41 @@ export default class RessetPassword extends Component {
          
           <Container style={styles.Container}>
           {this.loader()}
-            <H1 style={styles.header}>Resset Password</H1>
+            <StatusBar backgroundColor={Colors.primary}/>
+            <Text category="h3" style={{color:Colors.primary,alignSelf:'center',marginBottom:15}}>Resset Password</Text>
            <Form style={styles.form}>
-            <Item  >     
-            <Input placeholderTextColor={Colors.placeHolderColor} onChangeText={(text)=>this.setState({email:text})} placeholder="Email" />
-            </Item>
-           </Form>    
-          
-              <Button onPress={()=>this.ressetPassword()}  block style={styles.btn}>
-              <Text style={styles.textColor} >Reset Password</Text>
-             </Button>
+                       <Input 
+                                placeholderTextColor={Colors.placeHolderColor} 
+                                style={styles.inputStyle} 
+                                value={this.state.email}
+                                onChangeText={(text)=>this.setState({email:text})} 
+                                placeholder="Email"   
+                                underlineColorAndroid={Colors.lightGray}
+                                clearButtonMode="never"
+                                onSubmitEditing={(e)=>e.preventDefault()}
+                                icon={()=>
+                                <Icon style={styles.textColor} name="mail"/>}
+                           />
+           </Form> 
+
+               <Button
+                   size="giant" status="success" 
+                   style={{width:200,borderRadius:50,alignSelf:'center',marginTop:20}}
+                   onPress={()=>this.ressetPassword()}>
+                   Reset Password
+                </Button>      
+        
          </Container>
         )
     }
 }    
 
 const styles = StyleSheet.create({
+  inputStyle:{
+    backgroundColor:Colors.white,
+    borderWidth:0,
+    borderColor:Colors.white
+  },
   textColor:{
       color:Colors.baseText
     },
@@ -84,7 +104,8 @@ const styles = StyleSheet.create({
       backgroundColor:Colors.containers},
   form:{
       marginRight:10,
-      marginBottom:25
+      marginBottom:25,
+      marginLeft:10
     },
   header:{
       alignSelf:'center'

@@ -1,7 +1,7 @@
 import React,{Component} from 'react'
-import {Container,Text,H1,Input,Form,Icon,Button,Spinner,Textarea} from 'native-base'
+import {Container,H1,Form,Icon,Spinner,Textarea} from 'native-base'
 import * as firebase from 'react-native-firebase';
-import {AsyncStorage,StyleSheet,View,TouchableHighlight,PermissionsAndroid,Modal,Image,ScrollView} from 'react-native';
+import {AsyncStorage,StyleSheet,View,TouchableNativeFeedback,PermissionsAndroid,Modal,Image,ScrollView,TouchableHighlight} from 'react-native';
 import {toast} from '../../components/toast'
 import Toolbar from '../../components/Toolbar/Toolbar';
 import ImagePicker from 'react-native-image-crop-picker';
@@ -9,7 +9,11 @@ import Geolocation from 'react-native-geolocation-service';
 import { GEOCODING_API_KEY,GOOGLE_GEOLOCATION_URL} from 'react-native-dotenv'
 import {Loading} from '../../components/Loader/loader'
 import { Colors, Typography } from '../../styles';
-   
+import FontAwsome from '../../components/icons/fontawsome'
+import Feather from '../../components/icons/feather'
+import { Text, Layout ,Input,Button} from 'react-native-ui-kitten';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view'
+
 const firestore = firebase.firestore();
 const imageStore = firebase.storage()
 
@@ -21,7 +25,7 @@ export default class PatientProfile extends Component {
 
     }
       
-    state = {   
+    state = {     
            data :{},
            visible:false    ,
            showLoader:false,
@@ -38,7 +42,8 @@ export default class PatientProfile extends Component {
            city:'',
            state:'',
            gettingLocation:false,
-           location:''
+           location:'',
+           bio:''
  
     }       
 
@@ -104,7 +109,11 @@ export default class PatientProfile extends Component {
                }
           })
           
-      this.setState({gettingLocation:false,state:state,city:city})
+      this.setState({gettingLocation:false,state:state,city:city,location:state+" "+city},()=>{
+        firebase.firestore().collection('users').doc(user.uid).collection('personalInfo').doc('info').update({
+          location: state + " " + city
+        })
+      })
       }).catch((err)=>{
           console.log(err.results)
           this.setState({gettingLocation:false})
@@ -148,11 +157,10 @@ export default class PatientProfile extends Component {
       }
       this.setState({editing:!this.state.editing});
       if(user){
-        firebase.firestore().collection('users').doc(user.uid).collection('personalInfo').doc('info').set({
+        firebase.firestore().collection('users').doc(user.uid).collection('personalInfo').doc('info').update({
           firstName:this.state.firstName,
           lastName:this.state.lastName,
           occupation:this.state.occupation,
-          location: this.state.city  + this.state.state
         })
       }
       }
@@ -206,7 +214,7 @@ export default class PatientProfile extends Component {
                              location:data.location,
                              occupation:data.occupation,   
                              documentID:documentID,
-                             balance:!data.amount?0:data.amount
+                             balance:!data.amount?0:data.amount,
                            })   
                         })
                 });
@@ -216,9 +224,7 @@ export default class PatientProfile extends Component {
 
     //use to toggle editing on or off for updating profile
     toggleEditing(){
-      if(this.state.editing){
-        return  this.updateProfileInfo()
-      }
+
       this.setState({editing:!this.state.editing});
       
     }
@@ -242,12 +248,13 @@ export default class PatientProfile extends Component {
     render(){
             
         return(       
-          <ScrollView>
-          <Container style={styles.container}> 
+          <Container style={styles.container}>
+             <ScrollView >
               {this.loader()}
               <Toolbar toggleDrawer={()=>this.toggleDrawer()} menu bgColor={Colors.primary} /> 
-              <View style={styles.topContainer}>
-               </View>
+               <View style={styles.topContainer}>
+            
+               </View> 
                <View style={styles.picContainer}>
                 
                  
@@ -258,8 +265,8 @@ export default class PatientProfile extends Component {
                  </Image>
                  {
                     this.state.editing?
-                    <TouchableHighlight style={styles.cameraIcon} onPress={()=>this.pickProfilePicture()}>
-                      <Icon name='camera' />
+                    <TouchableHighlight style={styles.cameraIcon}  onPress={()=>this.pickProfilePicture()}>
+                      <Icon name='camera'/>
 
                    </TouchableHighlight>  :
                    <View></View>
@@ -271,90 +278,142 @@ export default class PatientProfile extends Component {
                 
               
                   <View style={styles.toggleBtn} onPress={()=>this.pickProfilePicture()}>
-                       <Button onPress={()=>this.toggleEditing()} style={styles.btnBorder} bordered small iconLeft>
-                          {!this.state.editing?
-                          <Text note uppercase={false}>Edit</Text>
-                          :
-                          <Text note uppercase={false}>Save</Text>
-                        }
-                       </Button>
+                      {!this.state.editing?
+                        <Button 
+                        appearance="ghost"
+                        size="large"
+                        icon={()=> <Feather style={{fontSize:20,color:'#000'}} name="edit" />} 
+                         onPress={()=>this.toggleEditing()} >
+                      </Button>:<Text></Text>
+                    }
                        
                     </View> 
                   
                </View>    
              {
                this.state.editing?
-               <View>
+               <View >
                    <Form style={styles.formContainer}>
                      <View style={styles.rowInputStyle}>
 
-                       <Input value={this.state.firstName} placeholderTextColor='#ccc' style={styles.inputStyle} onChangeText={(text)=>this.setState({firstName:text})} placeholder="First Name" />
-                       <Input value={this.state.lastName} placeholderTextColor='#ccc' style={styles.inputStyle} onChangeText={(text)=>this.setState({lastName:text})} placeholder="Last Name" />
+                       <Input 
+                          
+                         style={styles.input}  underlineColorAndroid={Colors.lightGray} label="FIRST NAME" style={styles.input} value={this.state.firstName} placeholderTextColor='#ccc' onChangeText={(text)=>this.setState({firstName:text})} placeholder="First Name" />
+                       <Input 
+                        
+                         label="LAST NAME" underlineColorAndroid={Colors.lightGray}   style={styles.input} value={this.state.lastName} placeholderTextColor='#ccc'  onChangeText={(text)=>this.setState({lastName:text})} placeholder="Last Name" />
                      </View>
 
-                     <Textarea value={this.state.occupation} onChangeText={(text)=> this.setState({occupation:text})} rowSpan={2} style={styles.textAreaStyle} bordered placeholder='Occupation'/>
+                     <Input 
+                       underlineColorAndroid={Colors.lightGray}   value={this.state.occupation}  label="OCCUPATION" style={{backgroundColor:Colors.white,width:"100%",borderColor:Colors.white}} onChangeText={(text)=> this.setState({occupation:text})}  placeholder='Occupation'/>
+                   
+                     <Input label="EMAIL" style={{backgroundColor:Colors.white,width:"100%"}} disabled style={{width:"100%"}} value={this.state.data.name} placeholderTextColor='#ccc'  placeholder="EMAIL" />  
+
                      <View style={styles.editLocationStyle}>
-                             {this.state.city && this.state.state ? 
+                             { this.state.location ? 
                              <View style={styles.greenLocationDot}></View>:<Text></Text>}
-                             <Text style={styles.alignCity}>{this.state.state + ' '} {this.state.city}</Text>
+                             <Text style={styles.alignCity}>{this.state.location}</Text>
                      </View>
-                     <Button onPress={()=>this.getLocation()} block iconLeft light  style={styles.setLocationBtn}>
-                              {
-                                  this.state.gettingLocation?
-                                       <Spinner color={Colors.forestgreen}/> :
-                                     <Icon style={styles.colors} name='pin'/>
-
-                              }
-
-
-                             <Text style={styles.colors}>Set Location</Text>
+                     <Button icon={()=> this.state.gettingLocation?  <Spinner color={Colors.white}/> :<Icon style={{color:Colors.white,fontSize:16}} name='pin'/>  
+                    } onPress={()=>this.getLocation()}>                       
+                            Set Location
                          </Button>
 
-                    </Form>    
-                    <H1 style={styles.locationName}>
-                      {this.state.data.name}   
-                  </H1> 
-
-                  <Button onPress={()=>this.setState({editing:false})} vertical dark block style={styles.btnTopSpace} transparent>
-                    <Icon name='ios-close' />
-                    <Text>cancel</Text>
+                         
+                <View style={[styles.bottomContainer,{width:"100%",marginTop:20}]}>
+                  <Button 
+                     style={{width:"48%",marginRight:5,backgroundColor:Colors.whitesmoke}}
+                     appearance="ghost" onPress={()=>this.setState({editing:false})}>
+                     CANCEL
+                    </Button>
+                    <Button  
+                      style={{width:"48%",marginRight:5}}
+                      status="success" onPress={()=>this.updateProfileInfo()}>
+                       SAVE
                   </Button>
+                </View>
+
+                    </Form>  
+                    
+
                </View>
                :
                <View style={styles.subContainer}>
              
-               <H1 style={styles.userName}>
+               <Text category="h3" style={styles.userName}>
                       {this.state.firstName + ' ' + this.state.lastName}   
-                  </H1>  
-                  <Text note style={styles.occupation}>
-                      {this.state.occupation}   
+                  </Text>  
+                        
+                            {
+                              this.state.location?
+                              <View style={[styles.mainLocation,{flexDirection:'row',marginBottom:10}]}>
+                                <View style={styles.greenLocationDot}></View>
+                                <Text>{this.state.location}</Text>
+                             </View>
+                               :
+                               <View></View>
+                            }
+
+                   <Text note style={styles.occupation}>
+                      {this.state.occupation + " Lorem, ipsum dolor sit amet consectetur adipisicing elit. A, distinctio non! Tempore ad veniam harum, inventore nemo odio voluptate necessitatibus vel itaque, autem sed labore consequuntur recusandae ea tenetur nihil?"}   
                   </Text> 
-                  <View style={styles.mainLocation}>
-                             <Text>
-                             <Text style={styles.greenDot}></Text>
-                             {this.state.location}</Text>
-                         </View>
-        
-               <View style={styles.bottomContainer}>
-                     <Button style={styles.btn} iconLeft  onPress={()=>this.props.navigation.navigate('GetCoins')} block rounded>
-                          <Icon style={styles.colors}  name='ios-add' />
-                          <Text style={styles.textColor}>{this.state.balance || this.state.balance?this.state.balance + '.00':0+'.00'}</Text>
-                     </Button> 
-                     <Button style={styles.btn} iconRight   block rounded>
-                          <Text style={styles.textColor}>Payment</Text>
-     
-                     </Button>   
+
+                   <View style={styles.bottomContainer}>
+                  
+                  <Layout style={styles.containerAddMoney}>
+                     <Text style={{color:Colors.btnIfo}} category="h4">$  {this.state.balance || this.state.balance?this.state.balance + '.00':0+'.00'}</Text>
+                  </Layout>
+
+                  <TouchableNativeFeedback onPress={()=>this.props.navigation.navigate('GetCoins')}>
+                    <Layout
+                      style={styles.moneyContainer}>
+                        <Icon name="add" style={styles.addIcon}/>
+                    </Layout >
+                  </TouchableNativeFeedback>
+                 
                </View>
+                  
+             
                </View>
              }
+              </ScrollView>   
           </Container>
-          </ScrollView>   
 
         )
     }   
 }        
 
 const styles = StyleSheet.create({
+  input:{
+     width:"48%",
+     margin:2,
+     backgroundColor:Colors.white,
+     borderColor:Colors.white,
+     paddingBottom:5
+
+
+  },
+  addIcon:{
+    color:Colors.btnIfo,
+    fontSize:50},
+  containerAddMoney:{
+    width:"48%",
+    backgroundColor:Colors.whitesmoke,
+    borderRadius:5,
+    height:100,
+    justifyContent:'center',
+    alignContent:'center',alignItems:'center',
+    marginRight:10
+  }, 
+    moneyContainer:{
+    width:"48%",
+    borderRadius:5,
+    borderColor:Colors.borderColor,
+    borderWidth:1,
+    height:100,
+    justifyContent:'center',
+    alignContent:'center',alignItems:'center'
+  },
   greenDot:{
     width:10,
     height:10,
@@ -362,27 +421,22 @@ const styles = StyleSheet.create({
     backgroundColor:Colors.forestgreen,
     marginRight:5
   },
+  
   mainLocation:{
-    alignItems:'center',
-    margin:10,
-    flex:1,
-    alignContent:'center'
+    marginTop:10,
   },
   occupation:{
-    marginBottom:10,
+    marginBottom:5,
     fontSize:Typography.baseFontSize,
-    textAlign:'center',
     color:Colors.baseText
   },
   userName:{
-    fontWeight:'500',
-    marginBottom:10,
-    fontSize:Typography.largeHeaderFontSize,
-    textAlign:'center',
+    marginTop:10,
   },
   subContainer:{
-    flex:1,
-    backgroundColor:Colors.containers
+    backgroundColor:Colors.containers,
+    marginLeft:16,
+    marginRight:16
   },
   btnTopSpace:{marginTop:10},
   locationName:{
@@ -407,8 +461,7 @@ const styles = StyleSheet.create({
   editLocationStyle:{
     flexDirection:'row',
     alignItems:'center',
-    margin:10,
-    flex:1,
+    marginTop:10,
     alignContent:'center'},
   textAreaStyle:{
     margin:5
@@ -417,16 +470,18 @@ const styles = StyleSheet.create({
     color:Colors.baseText,
     borderColor:Colors.grayCombination,
     borderWidth:1,
-    margin:5
+    margin:5,
+    borderColor:Colors.white
   },
   rowInputStyle:{
     flexDirection:'row',
-    justifyContent:'center',
-    alignContent:'center'
+    marginTop:10,
+   
   },
   formContainer:{
     marginRight:10,
-    marginBottom:25
+    marginBottom:25,
+    marginLeft:10,
   },
   btnBorder:{
     borderColor:Colors.grayCombination
@@ -440,14 +495,15 @@ const styles = StyleSheet.create({
   cameraIcon:{
     position:'absolute',
     bottom:0,
+    color:Colors.primary,
     right:10,
-    backgroundColor:'white',
-    justifyContent:'center',
+    backgroundColor:Colors.white,
+    width:35,
+    height:35,
+    borderRadius:100,
+    justifyContent:"center",
     alignContent:'center',
-    alignItems:'center',
-    width:40,
-    height:40,
-    borderRadius:100
+    alignItems:'center'
   },
   imgStyle:{
     width:120,
@@ -458,6 +514,24 @@ const styles = StyleSheet.create({
     alignContent:'center',
     marginTop:-60,
   },
+  topContainer:{
+    height:105,
+    justifyContent:'center',
+    backgroundColor:Colors.primary,  
+    padding:20,
+},
+profilePic:{
+ height:120,
+ width:120,
+//  backgroundColor:'#e9e9e9',
+ borderRadius:100,
+ alignSelf:'center',
+ borderColor:Colors.borderColor,
+ borderWidth:2,
+ justifyContent:'center',
+ alignContent:'center',
+ alignItems:'center'
+},
   textColor:{
       fontWeight:'bold',
       color:'#000'
@@ -467,32 +541,12 @@ const styles = StyleSheet.create({
     marginBottom:10
    },
    container:{
-       flex:1,
-       backgroundColor:Colors.containers
+       backgroundColor:Colors.containers,
    },
-   topContainer:{
-       height:105,
-       justifyContent:'center',
-       backgroundColor:Colors.primary,  
-       padding:20,
-   },
-   bottomContainer:{    
-       flex:2,
-       justifyContent:'center',
-       alignContent:'center',
-       alignItems:'center',  
-       margin:20
-   },
-   profilePic:{
-       height:120,
-       width:120,
-      //  backgroundColor:'#e9e9e9',
-       borderRadius:100,
-       alignSelf:'center',
-       borderColor:Colors.borderColor,
-       borderWidth:2,
-       justifyContent:'center',
-       alignContent:'center',
-       alignItems:'center'
-    }
+  
+   bottomContainer:{     
+     flexDirection:'row',
+     flex:1
+  },
+ 
 })

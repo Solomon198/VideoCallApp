@@ -49,19 +49,10 @@ export default class DocFooterComponent extends React.Component{
                     }
                     break   
                 }
-                case 1 :{
-                    return{
-                        icon:<MaterialIcons style={style.ico} name='assessment' />,
-                        bgColor:Colors.navBtnColor
-                    }
-                    break
-                }
-
-              
 
 
             
-                case 2 :{
+                case 1 :{
                     return{
                         icon:<MaterialIcons style={style.ico} name='person' />,
                         bgColor:Colors.navBtnColor
@@ -79,17 +70,11 @@ export default class DocFooterComponent extends React.Component{
                 }
                 break
             }
-            case 1 :{
-                return{
-                    icon:<Image style={{width:25,height:25}} source={require('../../../assets/assesment.png')} />,
-                    bgColor:Colors.navBtnColor
-                }  
-                break
-            }
+          
 
            
            
-            case 2 :{
+            case 1 :{
                 return{
                     icon:<MaterialIcons style={style.ico} name='person-outline' />,
                     bgColor:Colors.navBtnColor  
@@ -128,13 +113,10 @@ export default class DocFooterComponent extends React.Component{
             <FooterTab style={{backgroundColor:Colors.TabFooter}}>
                 <Button  style={{backgroundColor:this.returnColor(0).bgColor}} onPress={()=> {NavigationService.navigate('AppointMents')}}>
                   {this.returnColor(0).icon}
-                </Button>
-                <Button style={{backgroundColor:this.returnColor(1).bgColor}} onPress={()=>{NavigationService.navigate('Status')}} >
-                  {this.returnColor(1).icon}
                 </Button>   
                 
-                <Button  style={{backgroundColor:this.returnColor(2).bgColor}} onPress={()=>{NavigationService.navigate('Profile')}}>
-                    {this.returnColor(2).icon}
+                <Button  style={{backgroundColor:this.returnColor(1).bgColor}} onPress={()=>{NavigationService.navigate('Profile')}}>
+                    {this.returnColor(1).icon}
                 </Button>  
             </FooterTab>
             </Footer>
@@ -145,6 +127,6 @@ export default class DocFooterComponent extends React.Component{
 const style = StyleSheet.create({
     ico:{
         fontSize:Typography.iconFontSize,
-        color:Colors.navIconColor
+        color:Colors.primary
     }
 })  

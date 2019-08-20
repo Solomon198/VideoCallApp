@@ -1,5 +1,5 @@
 import React,{Component} from 'react'
-import {Container,Text,H1,Icon,Button} from 'native-base'
+import {Container,H1,Icon} from 'native-base'
 import * as firebase from 'react-native-firebase';
 import {AsyncStorage,StyleSheet,View,ProgressBarAndroid,Modal,TextInput} from 'react-native';
 import Toolbar from '../../components/Toolbar/Toolbar';
@@ -7,6 +7,8 @@ import { toast } from '../../components/toast';
 import {Loading} from '../../components/Loader/loader'
 import { Colors, Typography } from '../../styles';
 import { AppStatus } from '../../Utils/functions';
+import { Text, Layout ,Input,Button} from 'react-native-ui-kitten';
+
 
 const firestore = firebase.firestore();
 const storage = AsyncStorage;
@@ -116,19 +118,19 @@ export default class GetCoins extends Component {
                <Toolbar title='Get Coins' canGoBack={true} goBack={()=>this.props.navigation.goBack()}/>
                {this.renderLoader()}
                     <View style={styles.subContainer}>
-                        <Text style={styles.textStyle} note>Amount</Text>
-                    <H1  style={styles.amountStyle}>$ {this.state.coin?this.state.coin:0} .00</H1>
+                        {/* <Text style={styles.textStyle} note>Amount</Text> */}
+                    {/* <H1  style={styles.amountStyle}>$ {this.state.coin?this.state.coin:0} .00</H1> */}
                     <View style={styles.emptyView}></View>
                         <TextInput
                         value={this.state.coin}
                         onChangeText={(text)=>this.editing(text)}
                         keyboardType='numeric'
-                        placeholder='Enter An Amount'
-                        placeholderTextColor='lightgray'
+                        placeholder='$0.00'
+                        placeholderTextColor="#000"
                         style={styles.input}
                         underlineColorAndroid='transparent'
                         />
-                        <Button onPress={()=>this.setState({show:true},()=>{
+                        <Button size="large" onPress={()=>this.setState({show:true},()=>{
                              AppStatus().then((val)=>{
                                 if(val){
                                     this.setCoinsNumber()
@@ -138,8 +140,10 @@ export default class GetCoins extends Component {
                                    })
                                 }
                             })
-                        })} style={styles.btn}  rounded block iconLeft>
-                            <Icon style={styles.textStyle} name='logo-usd'/>
+                        })} 
+                        style={{width:"100%",margin:10}}
+                        icon={()=><Icon style={{color:Colors.white}} name='checkmark'/>} status="success">
+                            
                             <Text style={styles.textStyle}>Get Coin</Text>
                         </Button>   
                     </View>
@@ -157,7 +161,8 @@ const styles = StyleSheet.create({
        flex:1,
        justifyContent:'center',
        alignContent:'center',
-       alignItems:'center'
+       alignItems:'center',
+       marginLeft:10,marginRight:10,
    },
    textStyle:{
        color:Colors.baseText
@@ -167,18 +172,22 @@ const styles = StyleSheet.create({
     }
     ,
     emptyView:{
-        borderBottomColor:Colors.overLay,
+        borderBottomColor:Colors.white,
         borderBottomWidth:1,width:'100%',
         marginTop:10,
     },
     input:{
-        fontWeight:'bold',
+        fontWeight:'100',
         fontSize:Typography.largeFontSize,
         width:'100%',
         margin:10,
         alignSelf:'center',
         textAlign:'center',
-        color:Colors.baseText
+        color:Colors.baseText,
+        backgroundColor:"#f4f4f4",
+        height:100,
+        borderRadius:5,
+        
     },
     btn:{
         margin:10,

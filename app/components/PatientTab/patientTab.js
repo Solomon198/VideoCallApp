@@ -44,7 +44,7 @@ export default class FooterComponent extends React.Component{
             switch(active){
                 case 0:{
                     return{
-                        icon:<MaterialIcons style={style.ico} name='search' />,
+                        icon:<Ionicons style={style.ico} name='md-home' />,
                         bgColor:Colors.navBtnColor
 
                     }
@@ -82,7 +82,7 @@ export default class FooterComponent extends React.Component{
         switch(active){
             case 0:{
                 return{
-                    icon:<Ionicons style={style.ico} name='ios-search' />,
+                    icon:<MaterialCommunityIcons style={style.ico} name='home-outline' />,
                     bgColor:Colors.navBtnColor
 
                 }
@@ -167,7 +167,7 @@ export default class FooterComponent extends React.Component{
 const style = StyleSheet.create({
 ico:{
         fontSize:Typography.iconFontSize,
-        color:Colors.navIconColor
+        color:Colors.primary
     } 
 })
 

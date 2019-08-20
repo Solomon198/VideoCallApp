@@ -1,8 +1,8 @@
 import {createStackNavigator,createSwitchNavigator,createTabNavigator,createDrawerNavigator} from 'react-navigation'
 import React,{Component} from 'react'  
 import {View,Text} from 'react-native'
-
-
+import { mapping, light as lightTheme } from '@eva-design/eva';
+import { ApplicationProvider, Layout } from 'react-native-ui-kitten';
 import Login from '../screens/auth/login'
 import IndexPage from '../screens/auth/index'
 import PatientDashBoard from '../screens/patientScreens/dashboard'
@@ -31,7 +31,7 @@ import Charity from '../screens/doctorScreens/charity'
 import RessetPassword from '../screens/auth/ressetPassword';
 import AppIntro from '../screens/appIntro/intro';
 import SplashScreen from 'react-native-splash-screen';
-import RatingComponent from '../components/Rating/rating'
+import ViewDocProfile from '../screens/patientScreens/viewDoctorProfile'
 import PatientRatingStack from '../screens/patientScreens/patientRatingStack'
                    
 const PatientStack = createStackNavigator({
@@ -114,19 +114,20 @@ const DoctorStack = createStackNavigator({
 });
 
 
+const TopDoctorStack = createStackNavigator({
+    Index:TopDoctors,
+    ViewDocProfile:ViewDocProfile
+},{
+    headerMode:'none'
+})
+
 
 const PatientTabDrawerContent = createTabNavigator({
     Hospitals:{
         screen:PatientStack,
         
     },
-    TopDoctors:{
-        screen:TopDoctors,
-        navigationOptions:({navigation})=>({
-            
-            title:'Top Doctors'
-        })
-    },
+    TopDoctors:TopDoctorStack,
     AppointMents:{   
         screen:AppointMents,
         navigationOptions:({navigation})=>({
@@ -135,7 +136,7 @@ const PatientTabDrawerContent = createTabNavigator({
 
     Patient:{
         screen:ProfileStack,
-    }
+    },
 },{
     tabBarComponent:({navigation})=>(
            <FooterComponent
@@ -159,7 +160,6 @@ const DoctorDrawerContent= createTabNavigator({
     AppointMents:{
         screen:DoctorStack, 
     },      
-    Status:Status,  
     Profile:{
         screen:DocProfileStack,
     },
@@ -213,7 +213,7 @@ const SwitchNav = createSwitchNavigator({
     initialRouteName:'Auth'
 })
     
-const navigationPersistenceKey = __DEV__ ? "Niiitjl8hjrtkuujgkkkkkg" : 'Navuuoiokkkujdkkkjhfoovu';
+const navigationPersistenceKey = __DEV__ ? "Niihygitjil8hjrtjghjhgjhhklkjhuujgkkkuykkg" : 'Navuuoikjhgfghjkjhjhghokkkjukjdkkkkjhfoovu';
 
 
    
@@ -225,10 +225,16 @@ export default class NavContainer extends React.Component{
     }
     render(){
         return(
+            <ApplicationProvider
+               
+               mapping={mapping}
+               theme={lightTheme}>
             <SwitchNav persistenceKey={navigationPersistenceKey}  ref={navigatorRef => {
                 NavigationService.setTopLevelNavigator(navigatorRef);
               }}/>  
+             </ApplicationProvider>
         )
     }
 }
 
+   

@@ -51,8 +51,9 @@ export default class TopDoctors extends Component {
                     querySnapshot.forEach(function(doc) {
                           docarray.push({  
                               name: doc.data().name,
-                              key: doc.id ,
+                              key: doc.id ,   
                               totalDonations:doc.data().totalDonations,
+                              hospitalKey:doc.data().hospitalKey
                           })               
                      })
                 if(docarray.length < 1){
@@ -72,7 +73,45 @@ export default class TopDoctors extends Component {
                 
             },(err)=>alert('error reading dataBase'),()=>alert('completes'))
 
-    }    
+    }   
+    
+    
+    navigate(param){
+        let data ={}
+        data["doctorName"] = param.name;
+        data["doctorKey"]  = param.key;
+        data["price"]      = param.price;
+        data["doctorPhoto"] = param.photo;
+        data["doctorBio"] = param.bio;
+        data["youtubeIds"] = param.youtube;
+        data["hospitalKey"] = param.hospitalKey;
+        data["hospitalName"] = "";
+        data["userName"]  = firebase.auth().currentUser.email;        
+
+        this.props.navigation.navigate('SetAppointMent',data);
+    }
+
+
+    getDocInfo(items){
+        var db = firestore.collection("doctors").doc(items.hospitalKey).collection('credentials').doc(items.key);
+        db.get().then((doc)=>{
+            let item = {
+
+                name: doc.data().firstName?doc.data().firstName + ' ' + doc.data().lastName:doc.data().name,
+                key: doc.id ,
+                price:doc.data().price,
+                youtube:doc.data().youtube?doc.data().youtube:[],
+                bio:doc.data().bio?doc.data().bio:'',
+                photo:doc.data().photo?doc.data().photo:'',
+                paused:doc.data().paused,
+                hospitalKey:items.hospitalKey
+            
+
+            }
+            this.navigate(item);
+        })
+
+    }
 
     
 
@@ -96,14 +135,11 @@ export default class TopDoctors extends Component {
                   <Loading show={true}/>
                   :
                    <ListWithImage 
-                   rightItem={true}
-                   iconText={true}
-                   onPress={()=> ''}
-                   iconRightName='logo-usd'
+                   onPress={(item)=> this.getDocInfo(item)}
                    data = {this.state.donations}
-                   textPropertyName={'totalDonations'}
-                   iconColor={Colors.iconColor}   
+                   iconColor={Colors.white}   
                    showItem={["name","key"]}
+                   location
                  />
                     }   
           </Container>  

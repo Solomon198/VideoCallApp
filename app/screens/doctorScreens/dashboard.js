@@ -1,5 +1,5 @@
 import React,{Component} from 'react'
-import {View,Container,H2,Icon,H3} from 'native-base'
+import {View,Container,H2,Icon,H3,Header,Right,Left,Body,Title} from 'native-base'
 import * as firebase from 'react-native-firebase';
 import {AsyncStorage,TouchableNativeFeedback,Modal,Image,StyleSheet,PermissionsAndroid} from 'react-native'
 import { StopSound, PlaySoundRepeat } from 'react-native-play-sound';
@@ -12,6 +12,7 @@ import { ListWithImage } from '../../components/RenderList/ListComponents';
 import { Loading } from '../../components/Loader/loader';
 import { Colors, Typography } from '../../styles';
 import {deleteDirectory, permissionCheck} from '../../Utils/functions'
+import { Toggle,Text } from 'react-native-ui-kitten';
 
 
 
@@ -27,6 +28,12 @@ export default class DocDashboard extends Component {
     }
     
     state = {
+
+      online:false,
+      docName :'',
+      status:false,
+
+
        appointments:[
           
         ],
@@ -43,7 +50,9 @@ export default class DocDashboard extends Component {
         docKey:'',
         noAppointMents:false,
         doctorName:'',
-        callPhoto:''
+        callPhoto:'',
+        location:'',
+        occupation:'',
     } 
 
 
@@ -97,6 +106,20 @@ export default class DocDashboard extends Component {
     
     componentDidMount(){     
         SplashScreen.hide();
+        storage.getItem('user').then((val)=>{
+          storage.getItem('status').then((status)=>{
+              status = status?status:'offline'
+              status = status == 'online' ?true:false
+              let data = JSON.parse(val);
+              this.setState({docKey:data.key,docName:data.name,online:status},()=>{
+                  const ref =  firebase.database().ref('/status/'+this.state.docKey);
+                  ref.onDisconnect();
+                  ref.set({name:this.state.docName,status:'offline'})
+              })  
+          })
+           
+        })
+       
         deleteDirectory().then(()=>'').catch(()=>"")
         permissionCheck().then(()=>{
           //yea permission is ok
@@ -104,7 +127,7 @@ export default class DocDashboard extends Component {
           toast("Please accept all permission to enable effective video call")
         })
         messaging.subscribeToTopic('General');
-        this.broadcastPresence();
+        this.broadcastPresence();  
       
         storage.getItem('record').then(val=>{
           if(val){
@@ -131,7 +154,6 @@ export default class DocDashboard extends Component {
                   if(snapshot.val().endCall)return this.setState({calling:false,uid:false},()=>StopSound());
                   if(snapshot.val().callerName == 'false' || snapshot.val().callerName == false)return false;
                   if(snapshot.val().busy)return false;
-                  
                   this.setState({             
                     calling:true,                           
                     isUserFree:false,
@@ -139,6 +161,8 @@ export default class DocDashboard extends Component {
                     channel:snapshot.key,       
                     uid: snapshot.val().uid,
                     callPhoto:snapshot.val().photo,
+                    occupation:snapshot.val().occupation,
+                    location:snapshot.val().location
                   
                   },()=>PlaySoundRepeat('call_tone'));
               }
@@ -177,7 +201,9 @@ export default class DocDashboard extends Component {
                     docPhoto:doc.data().userPhoto,
                     userPhoto:doc.data().userPhoto,
                     patName:doc.data().patName,
-                    docName:doc.data().docName
+                    docName:doc.data().docName,
+                    userLocation:doc.data().userLocation,
+                    userOccupation:doc.data().userOccupation
 
 
                 })    
@@ -226,7 +252,8 @@ export default class DocDashboard extends Component {
       })
      
       firebase.database().ref('/status/'+this.state.docKey)
-      .set({name:this.state.docName,status:'busy'})
+      .set({name:this.state.docName,status:'busy'});
+      storage.setItem("status",'busy');
           
       
       //set paramaters for page and move to the page.
@@ -249,6 +276,9 @@ export default class DocDashboard extends Component {
       dataBase.ref(`listeners/${this.state.uid}/`).set({addTime:true,added:randomNumber,callRejected:true}).then((val)=>{
   
       }).catch((err)=>this.setState({modal:false}))
+      firebase.database().ref('/status/'+this.state.docKey)
+      .set({name:this.state.docName,status:'online'});
+      storage.setItem("status",'online');
     }
      
     
@@ -257,8 +287,10 @@ export default class DocDashboard extends Component {
       return( <Modal visible={this.state.calling} onRequestClose={()=>''} >
           <View style={styles.callingContainer}>
           <View style={styles.callInfo}>
-             <H3 style={styles.header1}>Incoming call</H3>
-             <H2 style={styles.header2}>{this.state.callerName + ' '}</H2>
+             <H2 style={styles.header1}>Incoming call</H2>
+             <H3 style={styles.header2}>{this.state.callerName + ' '}</H3>
+             <Text>{this.state.location + ' '}</Text>
+             <Text style={styles.header2}>{this.state.occupation + ' '}</Text>
           </View>
           <View style={styles.imgContainer}>
           <Image source={{uri:this.state.callPhoto}} style={styles.img}/>
@@ -286,6 +318,50 @@ export default class DocDashboard extends Component {
         </View>
       </Modal>)
     }  
+
+      //whenever status is online a notiication is sent to all patient who have an appointment with doctor
+      sendNotification(){
+        fetch(PUSH_NOTIFICATION_URL_FIREBASE, {
+            method: 'POST',
+            headers: {
+            Accept: 'application/json',
+            'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({        
+                topic:this.state.docKey,
+                payload:{
+                    docName:this.state.docName,
+                    docKey:this.state.docKey   
+                }
+            })
+            }).then((val)=>val.json())
+            .then((valz)=>{
+              toast('Presence sent to client')
+            }).catch((err)=>{
+                //
+            })
+    }
+      
+    //toggle presence of doctor on or off
+    togglePresence(){
+        this.setState({online:!this.state.online},()=>{
+            if(this.state.online){
+                    let ref = firebase.database().ref('/status/'+this.state.docKey);
+                    
+                    ref.set({name:this.state.docName,status:'online'}).then(()=>{
+                    })
+                    ref.onDisconnect().set({name:this.state.docName,status:'offline'})
+                    this.sendNotification()
+            }else{
+                storage.setItem('status','offline').then(()=>{
+                 firebase.database().ref('/status/'+this.state.docKey)
+                .set({name:this.state.docName,status:'offline'})
+                })
+                
+            }
+        })
+
+    }
     
     
     render(){
@@ -293,13 +369,32 @@ export default class DocDashboard extends Component {
           <Container>    
                     <View style={styles.container}>
                     
-                    <Toolbar title='Appointments'/>
+                    {/* <Toolbar title='Appointments'/> */}
+                    <Header style={{backgroundColor:Colors.primary}} androidStatusBarColor={Colors.primary}>
+                          <Left style={{width:100}}> 
+                              
+                          </Left>
+                          <Body style={{justifyContent:'center',alignContent:'center',alignItems:'center'}}>
+                            <Text  style={{textAlign:'center',alignSelf:'center',color:"#fff",marginLeft:30}}>Appointments</Text>
+                          </Body>
+                          <Right style={{width:100}}>
+                            <Toggle
+                                  checked={this.state.online}
+                                  status="success"
+                                  onChange={()=>this.togglePresence()}
+
+                                />
+                          </Right>
+                    </Header>
                     {this.renderCalling()}
                       {this.state.appointments.length > 0?
                        <ListWithImage 
+                          dateRight
                           data = {this.state.appointments}
                           onPress={()=> ''}
-                          showItem={["name","key","date","time"]}
+                          dateRight
+                          location
+                          showItem={["name",'userLocation',"userOccupation"]}
                      />
                  
                       :
@@ -348,8 +443,8 @@ const styles = StyleSheet.create({
     flexDirection:'row'
   },
   img:{
-    width:100,
-    height:100,
+    width:200,
+    height:200,
     borderRadius:100,
     alignSelf:'center'
   },

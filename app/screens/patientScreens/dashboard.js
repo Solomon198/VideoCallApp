@@ -6,7 +6,7 @@ import Toolbar from '../../components/Toolbar/Toolbar';
 import SplashScreen from 'react-native-splash-screen'
 import {Colors} from '../../styles/index'
 import type { Notification } from 'react-native-firebase';
-import {ListWithIcon} from '../../components/RenderList/ListComponents';
+import {ListWithImage} from '../../components/RenderList/ListComponents';
 import {Loading} from '../../components/Loader/loader'
 import {deleteDirectory} from '../../Utils/functions'
 
@@ -159,7 +159,7 @@ export default class PatientDashBoard extends Component {
              
            
           
-    db.get().then((querySnapshot)=>{                 
+    db.onSnapshot((querySnapshot)=>{                 
         let docarray = [];    
             querySnapshot.forEach(function(doc) {
                 
@@ -196,19 +196,19 @@ export default class PatientDashBoard extends Component {
     
     render(){  
         return(          
-          <Container style={{backgroundColor:Colors.containers}}>    
+          <Container style={{backgroundColor:Colors.white}}>    
                       <Toolbar title='Hospitals' />   
 
 
                       {
-                        this.state.hospitals.length > 0?
+                        this.state.hospitals.length > 0?  
                      
-                              <ListWithIcon
+                              <ListWithImage
                                 data = {this.state.hospitals}
                                 onPress={(item)=>this.nextNavigation(item)}
                                 iconLeftName='medical'
                                 iconColor={Colors.iconColor}
-                                showItem ={['name','key']}
+                                showItem ={['name']}
                               />      
                         
                         :

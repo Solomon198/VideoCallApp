@@ -74,7 +74,7 @@ export default class RenderCall extends Component{
 
 
   //deletes appointment as soon as call is finished
-  deleteAppointment(){
+  deleteAppointment(duration){
     let appointmentId = this.state.channel+"-"+ this.state.uid
     let appointments = firebase.firestore().collection('Appointments').doc(appointmentId);
     let hospitalRef = firebase.firestore().collection("Hospitals").doc(this.state.hospitalId);
@@ -94,7 +94,9 @@ export default class RenderCall extends Component{
       
   })
     if(this.state.channel){
-       appointments.delete();
+       if(duration > 0){
+        appointments.delete();
+       }
     }
   }
 
@@ -111,7 +113,7 @@ export default class RenderCall extends Component{
       }
     let location = firebase.firestore().collection('users').doc(this.state.uid).collection('history')
     firebase.messaging().unsubscribeFromTopic(this.state.channel)
-    location.add({callerName:this.state.doctorName,duration:this.callDurationCalculator(callDuration),date:JSON.stringify(new Date())})
+    location.add({callerName:this.state.doctorName,duration:this.callDurationCalculator(callDuration),date:new Date().getTime()})
   }
 
   //This analysis call duration which comes in seconds to minutes or seconds or minutes and seconds
@@ -167,14 +169,14 @@ export default class RenderCall extends Component{
     }
     return(
       <VideoView  
-      channel={this.state.channel}
-      onCallFinished={(duration)=>this.onCallFinished(duration)}
-      onCancel={(duration)=>this.handleFinish(duration)}
-      onFinish= {(duration)=>this.handleFinish(duration)}
-      addedTime={this.state.addedTime}
-      showAdd = {this.state.showAdd}    
-      patientId={firebase.auth().currentUser.uid}
-      removeAppointment ={()=>this.deleteAppointment()}  
+        channel={this.state.channel}
+        onCallFinished={(duration)=>this.onCallFinished(duration)}
+        onCancel={(duration)=>this.handleFinish(duration)}
+        onFinish= {(duration)=>this.handleFinish(duration)}
+        addedTime={this.state.addedTime}
+        showAdd = {this.state.showAdd}    
+        patientId={firebase.auth().currentUser.uid}
+        removeAppointment ={(duration)=>this.deleteAppointment(duration)}  
     />
     )
   }

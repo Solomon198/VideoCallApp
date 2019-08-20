@@ -1,9 +1,11 @@
 
 import React,{Component} from 'react'
 import {StyleSheet,} from 'react-native'
-import {Container,H1,List,ListItem,Body,H3,Radio} from 'native-base'
+import {Container,H1,List,ListItem,Body,H3} from 'native-base'
 import SplashScreen from 'react-native-splash-screen'
 import { Colors } from '../../styles';
+import { Text, Layout ,Input,Radio} from 'react-native-ui-kitten';
+
 
 export default class IndexPage extends Component {
     state = {
@@ -24,23 +26,27 @@ export default class IndexPage extends Component {
     render(){
         return(
             <Container style={styles.mainContainer}>
-                <H1 style={styles.signIn}>Sign In</H1> 
+                <Text category="h1" style={styles.signIn}>Sign In</Text> 
                 <List>
                     <ListItem onPress={()=>this.setState({doctor:!this.state.doctor,patient:false},()=>{
                         this.nextScreenParams('doctor','Hospitals')
                     })}>
                         <Body>
-                            <H3 style={styles.items}>Doctor</H3>
+                            <Text category="h4" style={styles.items}>Doctor</Text>
                         </Body>
-                        <Radio selectedColor={Colors.whitesmoke} selected={this.state.doctor} />
+                        <Radio onChange={()=>this.setState({doctor:!this.state.doctor,patient:false},()=>{
+                        this.nextScreenParams('doctor','Hospitals')
+                    })} checked={this.state.doctor} />
                     </ListItem>     
                     <ListItem onPress={()=>this.setState({patient:!this.state.patient,doctor:false},()=>{
                         this.nextScreenParams('patient','Login')
                     })}>
                         <Body>
-                            <H3 style={styles.items}>Patient</H3>
+                            <Text category="h4" style={styles.items}>Patient</Text>
                         </Body>         
-                        <Radio  selectedColor={Colors.whitesmoke} selected={this.state.patient} />
+                        <Radio  onChange={()=>this.setState({patient:!this.state.patient,doctor:false},()=>{
+                        this.nextScreenParams('patient','Login')
+                    })} checked={this.state.patient} />
                     </ListItem>        
                 </List>
             </Container>
@@ -51,13 +57,14 @@ export default class IndexPage extends Component {
 
 const styles = StyleSheet.create({
     items:{
-        color:Colors.baseText
+        color:Colors.baseText,
+        fontWeight:'100'
     },
     signIn:{
         fontSize:40,
         fontWeight:'bold',
         lineHeight:50,
-        color:Colors.baseText
+        color:Colors.primary
     },
     mainContainer:{
         flex:1,     

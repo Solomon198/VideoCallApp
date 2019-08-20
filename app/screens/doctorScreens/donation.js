@@ -6,7 +6,7 @@ import Toolbar from '../../components/Toolbar/Toolbar';
 import SplashScreen from 'react-native-splash-screen'
 import { Loading } from '../../components/Loader/loader';
 import { Colors } from '../../styles';
-import {ListWithIcon} from '../../components/RenderList/ListComponents'
+import {ListWithIcon,ListWithImage} from '../../components/RenderList/ListComponents'
 
 const storage = AsyncStorage;
 
@@ -49,7 +49,7 @@ export default class Donation extends Component {
                                           docarray.push({
                                               name: doc.data().name,
                                               key: doc.data().key,
-                                              donation:doc.data().amount,
+                                              donation:parseInt(doc.data().amount),
                 
                                           })    
                                      });                      
@@ -92,8 +92,9 @@ export default class Donation extends Component {
                    :
 
                    
-                   <ListWithIcon
+                   <ListWithImage
                    data = {this.state.charities}
+                   rightItem={true}
                    onPress={()=>''}
                    iconRightName='logo-usd'
                    textPropertyName="donation"

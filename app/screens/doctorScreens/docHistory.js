@@ -1,6 +1,3 @@
-
-
-
 import React,{Component} from 'react'
 import {Container} from 'native-base'
 import * as firebase from 'react-native-firebase';
@@ -38,11 +35,11 @@ export default class DocHistory extends Component {
             let data = JSON.parse(val);
             this.setState({user:data},()=>{
                 var database = firebase.firestore();    
-                var db = database.collection("users").doc(data.key).collection('history')
+                var db = database.collection("users").doc(data.key).collection('history').limit(100);
                        
                 
                     
-              db.get().then((querySnapshot)=>{                    
+              db.get().then((querySnapshot)=>{              
                   let docarray = [];    
                       querySnapshot.forEach(function(doc) {   
                           
@@ -53,7 +50,7 @@ export default class DocHistory extends Component {
                                 date:doc.data().date,
        
                             })    
-                       });                      
+                       });          
                   this.setState({                  
                       history:docarray,
                       noHistory:docarray.length > 1?false:true
@@ -87,11 +84,13 @@ export default class DocHistory extends Component {
                           <ListWithImage 
                           rightItem={true}
                           onPress={()=> ''}
-                          iconRightName='call'
+                          moment={false}
+                          location
                           format
+                          dateRight
                           data = {this.state.history}
                           iconColor={Colors.iconRedColor}   
-                          showItem={["name","date","key","duration"]}
+                          showItem={["name","duration"]}
                         />
                        :
                        !this.state.noHistory?     

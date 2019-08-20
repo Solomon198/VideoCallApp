@@ -41,7 +41,7 @@ export default class SideBar extends React.Component{
         return(
             <Container>
             <View style={Typography.container}>
-             <Content>
+             <Content style={{backgroundColor:Colors.white}}>
              <List>
 
                 {

@@ -1,15 +1,17 @@
 import React,{Component} from 'react'
-import {Text,H1,Icon,Button,H3} from 'native-base'
+import {H1,Icon,H3,Container} from 'native-base'
 import * as firebase from 'react-native-firebase';
-import {ScrollView,StyleSheet,View,DatePickerAndroid,TimePickerAndroid,Modal,Image,Dimensions} from 'react-native';
+import {ScrollView,StyleSheet,View,DatePickerAndroid,TimePickerAndroid,Modal,Image,Dimensions,Alert} from 'react-native';
 import Toolbar from '../../components/Toolbar/Toolbar';
 import { toast } from '../../components/toast';
 import { YouTubeStandaloneAndroid } from 'react-native-youtube';
 import {YOUTUBE_DEVELOPER_API_KEY} from 'react-native-dotenv'
 import { Thumbnail } from 'react-native-thumbnail-video';
 import {Loading} from '../../components/Loader/loader'
-import {Colors} from '../../styles/index'
+import {Colors, Typography} from '../../styles/index'
 import { AppStatus } from '../../Utils/functions';
+import { Text, Layout ,Button,Radio} from 'react-native-ui-kitten';
+import { ButtonComponent } from 'react-native-ui-kitten/ui/button/button.component';
 
 
 const firestore = firebase.firestore();
@@ -24,38 +26,87 @@ export default class SetAppointMent extends Component {
     
     state = {   
            data :this.props.navigation.state.params,
-           visible:false    ,
-           youtubeIds:[]
+           visible:false,
+           youtubeIds:this.props.navigation.state.params.youtubeIds,
+           patName:'',
+           userLocation:'',
+           userOccupation:''
  
-    }       
+    }   
+    
+    showLoader(){
+        this.setState({visible:true})
+    }
+
+    hideLoader(){
+        this.setState({visible:false})
+    }
+    confirmBooking(){
+        let ref = firestore.collection('users').doc(firebase.auth().currentUser.uid).collection('personalInfo').doc('info');
+        const {price} = this.state.data;
+
+        ref.get().then((snapshot)=>{
+                let info =  snapshot.data();
+                if(!info.firstName || !info.lastName || !info.location || !info.occupation ){
+                  return  Alert.alert('',"Please complete your profile info to set appointment")
+                }
+
+                this.setState({patName:info.firstName + ' ' + info.lastName,userOccupation:info.occupation,userLocation:info.location});
+                  
+            if(!snapshot.data())return this.setState({visible:false},()=>{
+                toast('You dont have enough coins to set appointment')
+            });
+
+            let value = snapshot.data().amount?snapshot.data().amount:0
+            if(parseInt(value) >= parseInt(price)){
+                Alert.alert(
+                    '',
+                    'You are setting appointment with '+ this.state.data.doctorName + ' confirm or cancel',
+                    [
+                      {
+                        text: 'Cancel',
+                        onPress: () => console.log('Cancel Pressed'),
+                        style: 'cancel',
+                      },
+                      {text: 'Confirm', onPress: () => {this.appStatus();this.showLoader()}},
+                    ],
+                    {cancelable: false},
+                  );
+            }else{
+                    this.hideLoader();
+                    toast('Get more coins to set this appointment')
+            }
+        })
+    }
 
 
     //Saving appointment to firebase after collecting neccessary information from user like date and credentials that will be neccessary during call and saving of history
-    sendAppointMent(date,time){
-        const {data,doctor} = this.state.data;
-        const {name,key} = data.hospital
-        const userName    = data.user.name;
+    sendAppointMent(){
+        const {doctorKey,doctorName,hospitalKey,doctorPhoto,price,userName} = this.state.data;
         let FB = firebase.firestore();
 
-        let appointmentId = doctor.key+"-"+firebase.auth().currentUser.uid;
-        let appointments = FB.collection('Appointments').doc(appointmentId);
-        let hospitalRef = FB.collection("Hospitals").doc(key);
-        let doctorRef = FB.collection("doctors").doc(key).collection("credentials").doc(doctor.key);
+        let appointmentId = doctorKey+"-"+firebase.auth().currentUser.uid;
 
+        let appointments = FB.collection('Appointments').doc(appointmentId);
+        let hospitalRef = FB.collection("Hospitals").doc(hospitalKey);
+        let doctorRef = FB.collection("doctors").doc(hospitalKey).collection("credentials").doc(doctorKey);
+        
+
+       
         
         let appointmentData = {
-            patName:userName,    
-            time:time,
-            date:date,
-            hospital:name,
-            doctorName:doctor.name,
-            channel:doctor.key,
+            patName:this.state.patName,    
+            doctorName:doctorName,
+            channel:doctorKey,
             userPhoto:firebase.auth().currentUser.photoURL,
-            docId:doctor.key,
+            docId:doctorKey,
             patId:firebase.auth().currentUser.uid,
-            docPhoto:doctor.photo,
-            hospitalId:key,
-            paid:parseInt(this.state.data.doctor.price)
+            docPhoto:doctorPhoto,
+            hospitalId:hospitalKey,
+            paid:parseInt(price),
+            userLocation:this.state.userLocation,
+            userOccupation:this.state.userOccupation,
+            date:new Date().getTime()
         }   
 
 
@@ -65,13 +116,8 @@ export default class SetAppointMent extends Component {
 
 
                         ref.get().then((snapshot)=>{
-                            if(!snapshot.data())return this.setState({visible:false},()=>{
-                                toast('You dont have enought coins to set appointment')
-                            });
 
-                            let value = snapshot.data().amount?snapshot.data().amount:0
-                            if(parseInt(value) >= parseInt(this.state.data.doctor.price)){
-                                                    
+                            let value = snapshot.data().amount?snapshot.data().amount:0                                                    
                                 hospitalRef.get().then((val)=>{
                                     let queue = val.data().queue;
                                     let total = queue + 1;
@@ -89,10 +135,10 @@ export default class SetAppointMent extends Component {
                                
                                
                                
-                                let newCoins = parseInt(value) - parseInt(this.state.data.doctor.price);
+                                let newCoins = parseInt(value) - parseInt(price);
                                     ref.update({amount:newCoins}).then((val)=>{
                                         appointments.set(appointmentData).then(()=>{
-                                            firebase.messaging().subscribeToTopic(doctor.key)
+                                            firebase.messaging().subscribeToTopic(doctorKey)
                                             this.props.navigation.goBack()
                                             this.setState({visible:false},()=>{
                                            });
@@ -100,11 +146,7 @@ export default class SetAppointMent extends Component {
                                 })
                                  
                             
-                            }else{
-                                this.setState({visible:false},()=>{
-                                    toast('Get more coins to set this appointment')
-                                });
-                            }
+                           
                         })
 
 
@@ -114,7 +156,7 @@ export default class SetAppointMent extends Component {
 
     componentDidMount(){
         //get youtubs urls of doctor passed from data gotten from a specific doctor in an hospital
-        this.setState({youtubeIds:this.state.data.doctor.youtube}); 
+        // this.setState({youtubeIds:this.state.youtube}); 
     } 
     
     
@@ -140,33 +182,6 @@ export default class SetAppointMent extends Component {
         )
     }
 
-    //Date picker
-    _setAppointMent(){       
-        DatePickerAndroid.open({
-            // Use `new Date()` for current date.   
-            // May 25 2020. Month 0 is January.
-            
-            date: new Date()
-          }).then((date)=>{
-              if(date.action == "dismissedAction")return false;
-             TimePickerAndroid.open({        
-                hour: 14,
-                minute: 0,
-                is24Hour: true, // Will display '2 PM'
-              }).then((time)=>{   
-                  if(time.action == 'dismissedAction')return false;
-                  let _date = {y:date.year,m:date.month,d:date.day}
-                  let _time = {h:time.hour,m:time.minute}
-                  this.setState({visible:true},()=>{
-                    this.sendAppointMent(_date,_time)
-                  })
-              }).catch(()=>{
-                  //do nothing
-              })
-          }).catch((val)=>{
-              //do nothing         
-          })
-    }
 
 
     //playing video from youtube embedder libary
@@ -183,90 +198,158 @@ export default class SetAppointMent extends Component {
 
 
     appStatus(){
-        AppStatus().then((val)=>{
-            if(val){
-                this._setAppointMent();
-            }else{
-               toast('App under maintainance please try again later')
-            }
+        const {doctorKey} = this.state.data;
+        let FB = firebase.firestore();
+
+        let appointmentId = doctorKey+"-"+firebase.auth().currentUser.uid;
+
+        let appointments = FB.collection('Appointments').doc(appointmentId);
+         
+        appointments.get().then((valData)=>{
+           if(valData.exists){
+             this.hideLoader();
+             return  toast("You already have a pending appointment with doctor")
+           }else{
+            AppStatus().then((val)=>{
+                if(val){
+                    this.sendAppointMent();
+                }else{
+                   this.hideLoader();
+                   toast('App under maintainance please try again later')
+                }
+            })
+           }
         })
+
+        
     }
 
 
    
     
     render(){
-             console.log(this.state.youtubeIds)
+        const {doctorKey,doctorName,hospitalKey,doctorPhoto,price,userName,hospitalName,doctorBio} = this.state.data;
         return(  
-          <ScrollView style={styles.mainContainer}>
-              <Toolbar  canGoBack goBack={()=>this.props.navigation.goBack()}/>
+          <Container style={styles.container}>
+             <ScrollView>
               {this.loader()} 
-              <Image style={styles.img} source={{uri:this.state.data.doctor.photo}}/>  
-              <View style={styles.topContainer}>
-                 <H1 style={styles.headerText}>
-                     {this.state.data.data.hospital.name}   
-                 </H1>
-                 <H3 style={styles.textStyle}>
-                    {this.state.data.doctor.name}
-                 </H3>
-                 {this.state.data.doctor.bio?
-                 <View>
-                   <Text style={styles.label}>Bio :</Text>
-                   <Text>{this.state.data.doctor.bio}</Text>
-                  </View>
+             
+              <Toolbar canGoBack goBack={()=>this.props.navigation.goBack()} toggleDrawer={()=>this.toggleDrawer()} bgColor={Colors.primary} /> 
+               <View style={styles.topContainer}>
+             
+               </View>
+               <View style={styles.picContainer}>
+                
+                   
+                
+                  <View style={styles.profilePic} >
+                   <Image style={styles.imgStyle} source={{uri:doctorPhoto}} >
+                      
+                 </Image>
                
-                 :
-                 <Text></Text>
-                 }
-              </View>
-              <View>
-              <View style={styles.youtubeContainer}>
-              {
-                  this.state.youtubeIds[0]?
-                  <View style={styles.youtube}>
-                   <Thumbnail onPress={()=> this.playYoutTubeVidz(this.state.youtubeIds[0])} imageWidth={width} imageHeight={200}  url={this.state.youtubeIds[0]} />
-                   </View>
-                :<Text></Text>
-              }
-
-{
-                  this.state.youtubeIds[1]?
-                  <View style={styles.youtube}>
-                   <Thumbnail onPress={()=> this.playYoutTubeVidz(this.state.youtubeIds[1])}  imageWidth={width}  imageHeight={200}   url={this.state.youtubeIds[1]} />
-                   </View>
-                :<Text></Text>
-              }
-
-{
-                  this.state.youtubeIds[2]?
-                  <View style={styles.youtube}>
-                   <Thumbnail onPress={()=> this.playYoutTubeVidz(this.state.youtubeIds[2])} imageWidth={width}  imageHeight={200}    url={this.state.youtubeIds[2]} />
-                   </View>
-                :<Text></Text>
-              }
+                    
+                  </View>
+                
+                
               
-              </View>
+                  
+               </View>    
+             
+             
+             
+             
+             
+             
+             
+             
+             
+             
+             
+             
+             
+             
+              
+             
+             
+                 <View style={styles.viewContainer}>
+                        <Text style={{marginTop:10}} category="h4">
+                            {doctorName}
+                        </Text>
+
+                        <Layout style={{width:"100%",flexDirection:'row',marginTop:10}}>
+                          <Layout  style={{width:"46%",marginRight:5,backgroundColor:Colors.primary,borderRadius:50,padding:5}}>
+                            <Text style={{fontSize:20,color:Colors.white,textAlign:'center',letterSpacing:1}}>{hospitalName}</Text> 
+                          </Layout>
+                          <Layout style={{width:"46%",backgroundColor:Colors.primary,borderRadius:50,padding:5}}>
+                             <Text style={{fontSize:20,color:Colors.white,textAlign:'center',letterSpacing:1}}>Therapist</Text>
+                          </Layout>
+                        </Layout>
+                       
+                        {doctorBio?
+                        <View>
+                            <Text style={{marginTop:10}}>{doctorBio} Lorem, ipsum dolor sit amet consectetur adipisicing elit. A, distinctio non! Tempore ad veniam harum, inventore nemo odio voluptate necessitatibus vel itaque, autem sed labore consequuntur recusandae ea tenetur nihil?</Text>
+                        </View>
+                    
+                        :
+                        <Text></Text>
+                        }
+                 </View>
+                 <Layout style={{width:"100%",flexDirection:'row',marginTop:10,marginLeft:10,marginRight:10}}>
+                          <Layout style={{width:"30%",marginRight:5,justifyContent:'center',backgroundColor:'#f5f5f5',borderRadius:5}}>
+                            <Text style={{alignSelf:'center',color:Colors.primary}} category="h6">${price+'.00'}</Text>
+                          </Layout>
+                          <Layout style={{width:"66%",marginRight:10}}>
+                             <Button style={{borderColor:Colors.lightGray,borderWidth:2,marginRight:10}} textStyle={{letterSpacing:2}} onPress={()=>this.confirmBooking()} status="success" >SET APPOINTMENT</Button>
+                          </Layout>
+                        </Layout>
+
+
+               <View>
+
+               <View style={styles.youtubeContainer}>
+           
+             {
+                   this.state.youtubeIds.length > 0?
+                   <View style={styles.youtube}>
+                    <Thumbnail onPress={()=> this.playYoutTubeVidz(this.state.youtubeIds[0])} imageWidth={width-20} imageHeight={200}  url={this.state.youtubeIds[0]} />
+                    </View>
+                 :<Text></Text>
+               } 
+   
+                <Layout style={{flexDirection:'row'}}>
+                {
+                   this.state.youtubeIds.length > 1?
+                   <View style={styles.youtube}>
+                    <Thumbnail onPress={()=> this.playYoutTubeVidz(this.state.youtubeIds[1])}  imageWidth={(width-20)/2}  imageHeight={160}   url={this.state.youtubeIds[1]} />
+                    </View>
+                 :<Text></Text>
+               }
+
+ {
+                   this.state.youtubeIds.length > 2 ?
+                   <View style={styles.youtube}>
+                    <Thumbnail  onPress={()=> this.playYoutTubeVidz(this.state.youtubeIds[2])} imageWidth={(width-20)/2}  imageHeight={160}    url={this.state.youtubeIds[2]} />
+                    </View>
+                 :<Text></Text>
+               }
+                </Layout>
+            
+               </View>
 
                  
-              </View>
-              <View style={styles.bottomContainer}>
-                      <View style={styles.priceContainer}>
-                        <Icon style={styles.textStyle} name='logo-usd'/>
-                        <Text style={styles.amount}>
-                        {this.state.data.doctor.price+'.00'}
-                        </Text>
-                      </View>
-                    <Button style={styles.btn} onPress={()=>this.appStatus()} light block rounded>
-                         <Text style={styles.textStyle}> Set Appointment</Text>
-                    </Button>    
-              </View>
-          </ScrollView>        
+               </View>
+             </ScrollView>     
+          </Container>   
 
         )
     }
 }        
 
 const styles = StyleSheet.create({
+    viewContainer:{
+         marginLeft:10,
+         marginRight:10
+    },
     btn:{
         backgroundColor:Colors.overLay
     },
@@ -282,10 +365,37 @@ const styles = StyleSheet.create({
         alignItems:'center',
         justifyContent:'center'},
     youtubeContainer:{
-        flex:1,
-        backgroundColor:Colors.containers,
-        marginRight:2.5
+        backgroundColor:Colors.white,
+        marginTop:20,
+        marginLeft:10,
+        marginRight:10
     },
+    
+  picContainer:{
+    alignContent:'center',
+    marginTop:-60,
+  },
+  topContainer:{
+    height:150,
+    backgroundColor:Colors.primary,  
+},
+imgStyle:{
+    width:120,
+    height:120,
+    borderRadius:100
+  },
+profilePic:{
+ height:120,
+ width:120,
+//  backgroundColor:'#e9e9e9',
+ borderRadius:100,
+ alignSelf:'center',
+ borderColor:Colors.borderColor,
+ borderWidth:2,
+ justifyContent:'center',
+ alignContent:'center',
+ alignItems:'center'
+},
     label:{
         fontWeight:'bold'
     },
@@ -295,7 +405,6 @@ const styles = StyleSheet.create({
       color:Colors.baseText
     },
     mainContainer:{
-        flex:1,
         backgroundColor:Colors.containers},
     img:{
         width:100,
@@ -308,20 +417,15 @@ const styles = StyleSheet.create({
         color:Colors.baseText
     },
     youtube:{
-        width:width,
+        width:(width-10)/2,
         height:200,
-        marginBottom:5
-    },
+        marginBottom:5,
+    },   
    container:{
-       backgroundColor:Colors.containers,margin:2.5
+       backgroundColor:Colors.containers
    },
-   topContainer:{
-       justifyContent:'center',
-       backgroundColor:Colors.containers,
-       padding:20,
-   },
+  
    bottomContainer:{    
-       flex:1,
        justifyContent:'center',
        alignContent:'center',
        alignItems:'center',

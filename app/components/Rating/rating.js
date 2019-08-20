@@ -82,7 +82,7 @@ export default class Ratings extends Component {
               suggesstion:this.state.suggesstion,
               rating:this.state.rating
             }).then(()=>{
-                this.props.dismissModal();
+               
             })
       }
 
@@ -124,7 +124,6 @@ export default class Ratings extends Component {
                toast("Please rate or make a suggesstion to submit feedback")
           }else if(rating && !suggesstion.trim()){
                toast("submit rating");
-               this.props.dismissModal();
                this.patientDontReportCall();
           }else if(!rating && suggesstion.trim()){
                toast("submit suggestion");
@@ -159,7 +158,6 @@ export default class Ratings extends Component {
 
     cancelOption(){
         this.patientDontReportCall();
-        this.props.dismissModal()
     }
 
     
@@ -201,7 +199,6 @@ export default class Ratings extends Component {
                              //perform doctor normal transaction
 
 
-
                              //node holds doctor total donations for purpose of top doctors
                              let donationRef = firebase.firestore().collection('donation').doc(docId);
 
@@ -214,7 +211,7 @@ export default class Ratings extends Component {
                              let ref = firebase.firestore().collection('doctors').doc(this.props.data.hospitalId).collection('credentials').doc(docId);
 
 
-                             let hospitalRef = FB.collection("Hospitals").doc(this.props.data.hospitalId);
+                             let hospitalRef = firebase.firestore().collection("Hospitals").doc(this.props.data.hospitalId);
 
 
                             
@@ -223,7 +220,7 @@ export default class Ratings extends Component {
                              
                              let charityMoney = (parseInt(donationPercentage)/100)*(parseInt(this.props.data.paid));
 
-   
+                           
                              charityMoneyRef.get().then((snapshot)=>{
                                   let money = parseInt(snapshot.data().donation);
                                   let tMoney = money + charityMoney;
@@ -233,7 +230,7 @@ export default class Ratings extends Component {
                              refDontations.get().then((snapshotVal)=>{
                                 if(snapshotVal.exists){
                                     let amount = snapshotVal.data().amount +charityMoney;
-                                    refDontations.set({name:charityName,amount:amount,key:charityId});
+                                    refDontations.update({name:charityName,amount:amount,key:charityId});
                                 }else{
                                     refDontations.set({amount:charityMoney,key:charityId,name:charityName})
                                 }
@@ -244,7 +241,7 @@ export default class Ratings extends Component {
                              donationRef.get().then((snapshot)=>{
                                  let donationAmount = snapshot.exists?snapshot.data().totalDonations:0;
                                  let _totalDonation = parseInt(donationAmount) + parseInt(charityMoney);
-                                 donationRef.set({name:doctorName,doctorKey:docId,totalDontions:_totalDonation}).then(()=>{
+                                 donationRef.set({name:doctorName,doctorKey:docId,totalDonations:_totalDonation,hospitalKey:this.props.data.hospitalId}).then(()=>{
                                 
                                  })
                              })
@@ -252,7 +249,6 @@ export default class Ratings extends Component {
                              ref.get().then((onSnapshot)=>{
                                  let userMoney = onSnapshot.data().amount?onSnapshot.data().amount:0;
                                  let userNewBalance = ((parseInt(this.props.data.paid) - charityMoney)) + userMoney;
-
                                  let hospMoney = parseInt(this.props.data.paid) - charityMoney
                                  hospitalRef.get().then((val)=>{
                                     let earnings = val.data().earnings;
@@ -268,14 +264,14 @@ export default class Ratings extends Component {
                              })
                        }
                     }else{
-                        //submit user credentials to temp
-                       //++++++++++++++++++++++++==
+                    //     submit user credentials to temp
+                    //    ++++++++++++++++++++++++==
                         transactionRef.set({
                             patId:patId,
                             coins:this.props.data.paid,
                             patReported:false
                         })
-
+             
                         this.props.dismissModal();
                     }
                 })

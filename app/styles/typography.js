@@ -13,6 +13,12 @@ export const largeHeaderFontSize = 20
 export const headerFontSize = 18
 export const ToolbarHeight = 44;
 
+
+export const fonts = {
+    fontFamily:'Oxygen-Regular',
+}
+
+
 const base = {
   alignItems: 'center',
   display: 'flex',

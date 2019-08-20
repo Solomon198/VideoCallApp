@@ -1,18 +1,27 @@
 import React,{Component} from 'react'
-import {Text,H1,Title,Form,Icon,Button,Spinner,Textarea,Input} from 'native-base'
+import {H1,Title,Form,Icon,Spinner,Textarea} from 'native-base'
 import * as firebase from 'react-native-firebase';
-import {AsyncStorage,StyleSheet,View,Image,TouchableHighlight,Modal,Alert,ScrollView} from 'react-native';
+import {AsyncStorage,StyleSheet,View,Image,TouchableHighlight,Modal,Alert,ScrollView,Dimensions} from 'react-native';
 import ImagePicker from 'react-native-image-crop-picker';
 import Toolbar from '../../components/Toolbar/Toolbar';
 import { toast } from '../../components/toast';
 import Geolocation from 'react-native-geolocation-service';
+import { Text, Layout ,Input,Button} from 'react-native-ui-kitten';
 import { GEOCODING_API_KEY,GOOGLE_GEOLOCATION_URL} from 'react-native-dotenv'
 import { Colors, Typography } from '../../styles';
+import Feather from '../../components/icons/feather'
+import { Thumbnail } from 'react-native-thumbnail-video';
+import { YouTubeStandaloneAndroid } from 'react-native-youtube';
+import {YOUTUBE_DEVELOPER_API_KEY} from 'react-native-dotenv'
+
+
+
 const firestore = firebase.firestore()
 
 const imageStore = firebase.storage();
 const storage = AsyncStorage;
-    
+const {width} = Dimensions.get('window');
+   
 export default class DocProfile extends Component {
     constructor(props){
         super(props);
@@ -148,6 +157,20 @@ export default class DocProfile extends Component {
       
     }
 
+    
+    //playing video from youtube embedder libary
+    playYoutTubeVidz(url){
+      YouTubeStandaloneAndroid.playVideo({
+          apiKey: YOUTUBE_DEVELOPER_API_KEY,     // Your YouTube Developer API Key
+          videoId: this.getYoutubeVidzId(url),     // YouTube video ID
+          autoplay: true,             // Autoplay the video
+          startTime: 0,             // Starting point of video (in seconds)
+        })
+          .then(() => toast('Player exited'))
+          .catch(errorMessage => toast(errorMessage+''))
+  }
+
+
 
     //get human readable locations from longitude and latitude from gcm gecoding api
     googleReverseGeo(){
@@ -237,7 +260,6 @@ export default class DocProfile extends Component {
                     let link2 = checkUrls.length > 1 ?data.youtube[1]:'';
                     let link3 = checkUrls.length > 2 ?data.youtube[2]:'';
 
-
                     this.setState({
                       firstName:data.firstName,
                       lastName:data.lastName,
@@ -256,6 +278,16 @@ export default class DocProfile extends Component {
                 });
             })
     }    
+
+
+      //This methode get the urls of youtube the user can either paste urls from phone or from browser but what we are interested is the id of the video and the youtube libary will play the video provided it is a youtube video and the id is correct. the two url format has / an = before the id which is a good target to get the id for either
+      getYoutubeVidzId(url){
+        let checkUrl = url.indexOf('=');
+        let lastSlashPos = checkUrl == -1?url.lastIndexOf('/'):url.lastIndexOf('=');
+        let videoId = url.substring(lastSlashPos+1);
+
+        return videoId
+     }
 
 
 
@@ -287,7 +319,10 @@ export default class DocProfile extends Component {
 
     //tenary operator is used for toggling between edit mode 
     render(){
-            
+        let link1 = this.state.link1?this.getYoutubeVidzId(this.state.link1):'';
+        let link2 = this.state.link2?this.getYoutubeVidzId(this.state.link2):'';
+        let link3 = this.state.link3?this.getYoutubeVidzId(this.state.link3):'';
+
         return(         
           <ScrollView style={styles.container}>
              {this.loader()}
@@ -309,21 +344,17 @@ export default class DocProfile extends Component {
                    <View></View>
                   }
                  </View>
-                 <View style={styles.docBalance} onPress={()=>this.pickProfilePicture()}>
-                       <Button iconLeft onPress={()=>this.toggleEditing()} style={{backgroundColor:'white'}} transparent  >
-                           {/* <Icon  style={{fontSize:Typography.buttonFontSize,color:Colors.iconColor}} name='logo-usd'/> */}
-                          <Text note uppercase={false}>${this.state.balance || this.state.balance?this.state.balance + '.00':0+'.00'}</Text>
-                       </Button>
-                       
-                    </View>
-                 <View style={styles.toggle} onPress={()=>this.pickProfilePicture()}>
-                       <Button transparent onPress={()=>this.toggleEditing()} style={{borderColor:'lightgray',backgroundColor:'white'}} bordered small iconLeft>
-                          {!this.state.editing?
-                          <Text note uppercase={false}>Edit</Text>
-                          :
-                          <Text note uppercase={false}>Save</Text>
-                        }
-                       </Button>
+              
+              
+                    <View style={styles.toggle}>
+                      {!this.state.editing?
+                        <Button 
+                        appearance="ghost"
+                        size="large"
+                        icon={()=> <Feather style={{fontSize:20,color:'#000'}} name="edit" />} 
+                         onPress={()=>this.toggleEditing()} >
+                      </Button>:<Text></Text>
+                    }
                        
                     </View> 
          
@@ -334,8 +365,14 @@ export default class DocProfile extends Component {
                  <View>
                  <Form style={styles.form}>
                    <View style={styles.inputContainer}>
-                     <Input value={this.state.firstName} placeholderTextColor='#ccc' style={styles.input} onChangeText={(text)=>this.setState({firstName:text})} placeholder="First Name" />
-                     <Input value={this.state.lastName} placeholderTextColor='#ccc' style={styles.input} onChangeText={(text)=>this.setState({lastName:text})} placeholder="Last Name" />
+                     <Input 
+                     underlineColorAndroid={Colors.lightGray}
+                     label="FIRST NAME"
+                     value={this.state.firstName} style={{width:"47%",marginRight:4,backgroundColor:'#fff',borderColor:"#fff"}} placeholderTextColor='#ccc' onChangeText={(text)=>this.setState({firstName:text})} placeholder="First Name" />
+                     <Input 
+                     underlineColorAndroid={Colors.lightGray}
+                     label="LAST NAME"
+                     value={this.state.lastName} style={{width:"50%",backgroundColor:'#fff',borderColor:"#fff"}} placeholderTextColor='#ccc'  onChangeText={(text)=>this.setState({lastName:text})} placeholder="Last Name" />
                    </View>
 
                    
@@ -344,18 +381,16 @@ export default class DocProfile extends Component {
                              <Text>
                              <Text style={styles.greenDot}></Text>
                              {this.state.city + ' ' + this.state.state}</Text>
-                         </View>
-                   <Button onPress={()=>this.getLocation()} block iconLeft light  style={styles.btnLocation}>
-                              {
-                                  this.state.gettingLocation?
-                                       <Spinner color={Colors.forestgreen}/> :
-                                     <Icon style={styles.iconColor} name='pin'/>
+                  </View>
 
-                              }
+                  <Button  icon={()=> this.state.gettingLocation?  <Spinner color={Colors.white}/> :<Icon style={{color:Colors.white,fontSize:16}} name='pin'/>  
+                    } onPress={()=>this.getLocation()}>                       
+                            Set Location
+                  </Button>
+                   
 
 
-                             <Text style={styles.textStyle}>Set Location</Text>
-                         </Button> 
+                          
                    <H1 style={styles.youtubeHeader}>Youtube link</H1>
                     <Text note style={styles.youtubeHeaderNote}>copy and past youtube video links from youtube</Text>
                      <Textarea value={this.state.link1} onChangeText={(text)=> this.setState({link1:text},()=>{
@@ -366,45 +401,93 @@ export default class DocProfile extends Component {
                   </Form>    
                   
 
-                
+                  <View style={[styles.bottomContainer,{width:"100%",marginTop:20}]}>
+                  <Button 
+                     style={{width:"48%",marginRight:5,backgroundColor:Colors.whitesmoke}}
+                     appearance="ghost" onPress={()=>this.setState({editing:false})}>
+                     CANCEL
+                    </Button>
+                    <Button  
+                      style={{width:"48%",marginRight:5}}
+                      status="success" onPress={()=>this.updateProfileInfo()}>
+                       SAVE
+                  </Button>
+                </View>
 
-                <Button onPress={()=>this.setState({editing:false})} vertical dark block style={{marginTop:10}} transparent>
-                  <Icon name='ios-close' />
-                  <Text style={styles.textStyle}>cancel</Text>
-                </Button>
+
              </View>
                  :
                  <View style={styles.subContainer}>
                 
-                    <H1 style={styles.headerText}>
+                    <Text style={{textAlign:'center'}} category="h3">
                     {this.state.firstName + ' ' + this.state.lastName}   
-                    </H1> 
-                    <Text style={styles.hospitalTextStyle}>
-                        {this.state.data.hospital}   
-                    </Text>   
-
+                    </Text> 
+                       
+                        <Layout style={{width:"100%",flexDirection:'row',marginTop:10,marginBottom:10}}>
+                          <Layout style={{width:"46%",marginRight:5}}>
+                            <Button status="success" size="small" style={{borderRadius:50}} >Therapist</Button>
+                          </Layout>
+                          <Layout style={{width:"46%"}}>
+                              <Button status="success" size="small" style={{borderRadius:50}}>{this.state.data.hospital}  </Button>
+                          </Layout>
+                        </Layout>
+                       
                    
                     <View style={styles.locationContainer}>
+                             <Icon style={[styles.iconColor,{fontSize:18,marginRight:10}]} name='pin'/>
                              <Text>
                              <Text style={styles.locationText}></Text>
                              {this.state.location}</Text>
-                         </View>
-                 <View style={styles.bottomContainer}>
-                 
-                        <Button style={styles.btn} iconLeft  block rounded>
-                            <Icon style={styles.iconColor}  name='ios-add' />
-                            <Text style={styles.textColor}>2000</Text>
-                       </Button> 
-                       <Button style={styles.btn} iconRight   block rounded>
-                            <Text style={styles.textColor}>Payment</Text>
-                           
-                       </Button>
-   
-                 </View>   
+                   </View>
+                       
+                  <Text><Text style={{fontWeight:"bold"}}>Bio </Text>{this.state.bio}</Text>
+
+
+
+                  <View style={styles.youtubeContainer}>
+           
+           {
+                 this.state.link1?
+                 <View style={styles.youtube}>
+                  <Thumbnail onPress={()=> this.playYoutTubeVidz(link1)} imageWidth={width-25} imageHeight={200}  url={this.state.link1} />
+                  </View>
+               :<Text></Text>
+             } 
+ 
+              <Layout style={{flexDirection:'row'}}>
+              {
+                 this.state.link2?
+                 <View style={[styles.youtube]}>
+                  <Thumbnail onPress={()=> this.playYoutTubeVidz(link2)}  imageWidth={(width-32)/2}  imageHeight={160}   url={this.state.link2} />
+                  </View>
+               :<Text></Text>
+             }
+
+{
+                 this.state.link3?
+                 <View style={[styles.youtube,{marginRight:10}]}>
+                  <Thumbnail  onPress={()=> this.playYoutTubeVidz(link3)} imageWidth={(width-33)/2}  imageHeight={160}    url={this.state.link3} />
+                  </View>
+               :<Text></Text>
+             }
+              </Layout>
+          
+             </View>
+                        <Layout style={{width:"100%",flexDirection:'row',marginBottom:10,marginTop:-20}}>
+                          <Layout style={{width:"30%",marginRight:1,justifyContent:'center',backgroundColor:'#f5f5f5',borderRadius:5}}>
+                            <Text style={{alignSelf:'center',color:Colors.primary}} category="h6">${this.state.balance || this.state.balance?this.state.balance + '.00':0+'.00'}</Text>
+                          </Layout>
+                          <Layout style={{width:"70%"}}>
+                             <Button  status="success" >REDEEM</Button>
+                          </Layout>
+                        </Layout>
+
+                    
+               
                  </View>
                }
              
-              
+          
           </ScrollView> 
 
         )
@@ -419,14 +502,12 @@ const styles = StyleSheet.create({
     backgroundColor:Colors.forestgreen,
     marginRight:5},
   locationContainer:{
-    alignItems:'center',
-    margin:10,
     flex:1,
-    alignContent:'center'
+    flexDirection:"row",
+    marginBottom:5
   },
   hospitalTextStyle:{
     fontSize:Typography.headerFontSize,
-    textAlign:'center',
     color:Colors.baseText
   },
   headerText:{
@@ -434,11 +515,12 @@ const styles = StyleSheet.create({
     marginBottom:10,
     fontSize:Typography.headerFontSize,
     marginLeft:5,
-    textAlign:'center'
   },
   subContainer:{
      flex:1,
-     backgroundColor:Colors.containers
+     backgroundColor:Colors.containers,
+     marginLeft:15,
+     marginRight:15
   },
   youtubeHeaderNote:{
     marginLeft:10
@@ -483,6 +565,7 @@ const styles = StyleSheet.create({
     alignContent:'center'},
   form:{
     marginRight:10,
+    marginLeft:10,
     marginBottom:25
   },
   docBalance:{
@@ -514,9 +597,10 @@ const styles = StyleSheet.create({
     borderRadius:100
   },
   img:{
-    width:120,
-    height:120,
-    borderRadius:100
+    width:150,
+    height:150,
+    borderRadius:100,
+    marginBottom:20
   },
    profilePicMainContainer:{
      alignContent:'center',
@@ -541,11 +625,14 @@ const styles = StyleSheet.create({
    },
    bottomContainer:{    
        flex:2,
-       justifyContent:'center',
-       alignContent:'center',
-       alignItems:'center',
-       margin:20
+       flexDirection:'row',
+       marginBottom:10
    } ,  
+   youtube:{
+    width:(width-10)/2,
+    height:200,
+    marginBottom:5,
+}, 
    profilePic:{
        height:120,
        width:120,
@@ -558,5 +645,9 @@ const styles = StyleSheet.create({
        justifyContent:'center',
        alignContent:'center',
        alignItems:'center'
-    }
+    },
+    youtubeContainer:{
+      backgroundColor:Colors.white,
+      marginTop:20,  
+  },
 })

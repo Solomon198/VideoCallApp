@@ -276,7 +276,7 @@ export default class VideoView extends Component {
     }
 
     handlerCancel = () => {
-        this.props.removeAppointment();
+        this.props.removeAppointment(this.duration);
         //this handler stops the destroy the session when time is up
         // console.log("TTT Agora Stop TIMER: " + new Date().toLocaleString());
         // this.stop()

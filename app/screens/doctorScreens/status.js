@@ -46,49 +46,7 @@ export default class Any extends Component {
     }
 
    
-    //whenever status is online a notiication is sent to all patient who have an appointment with doctor
-    sendNotification(){
-        fetch(PUSH_NOTIFICATION_URL_FIREBASE, {
-            method: 'POST',
-            headers: {
-            Accept: 'application/json',
-            'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({        
-                topic:this.state.docKey,
-                payload:{
-                    docName:this.state.docName,
-                    docKey:this.state.docKey   
-                }
-            })
-            }).then((val)=>val.json())
-            .then((valz)=>{
-              toast('Presence sent to client')
-            }).catch((err)=>{
-                //
-            })
-    }
-      
-    //toggle presence of doctor on or off
-    togglePresence(){
-        this.setState({online:!this.state.online},()=>{
-            if(this.state.online){
-                    let ref = firebase.database().ref('/status/'+this.state.docKey);
-                    
-                    ref.set({name:this.state.docName,status:'online'}).then(()=>{
-                    })
-                    ref.onDisconnect().set({name:this.state.docName,status:'offline'})
-                    this.sendNotification()
-            }else{
-                storage.setItem('status','offline').then(()=>{
-                 firebase.database().ref('/status/'+this.state.docKey)
-                .set({name:this.state.docName,status:'offline'})
-                })
-                
-            }
-        })
-
-    }
+  
         
     render(){
             

@@ -20,6 +20,7 @@ export const grayCombination = '#f0f0f0';
 export const forestgreen = 'forestgreen';
 export const red = 'red'
 
+export const btnIfo = "#4382d4"
 export const placeHolderColor = lightGray;
 export const appIntroIconColor = white;
 export const borderColor = lightGray;
@@ -41,4 +42,5 @@ export const navBtnColor = white;
 export const iconColor = black;
 export const toolBarIconColor = white;
 export const containers = white;
+export const btnColor = "#2b542c"
 
