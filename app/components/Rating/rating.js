@@ -9,8 +9,11 @@ import { toast } from '../toast';
 import MaterialIcons from '../icons/material';
 import firebase, { Firebase } from 'react-native-firebase'
 import { convertToMp3 } from '../../Utils/functions';
+import References from '../../Utils/refs'
+import DefaultCus from '../../Utils/strings'
 const fireStore = firebase.firestore();
 var RNFS = require('react-native-fs');
+
 const storage = AsyncStorage;
 
 export default class Ratings extends Component {
@@ -26,7 +29,7 @@ export default class Ratings extends Component {
         editable:false
     }  
     
-     ref   = fireStore.collection("Rating");
+     ref   = fireStore.collection(References.CategoryFour);
 
   
 
@@ -75,7 +78,7 @@ export default class Ratings extends Component {
 
 
       submitSuggesstion(){
-          fireStore.collection("Suggestions")
+          fireStore.collection(References.CategoryFive)
           .add({
               docId:this.props.docId,
               userId:this.props.userId,
@@ -89,7 +92,7 @@ export default class Ratings extends Component {
 
       saveRating(userId,docId){
         let path = userId+ "_" +docId
-              fireStore.collection("Rating").doc(path).set({
+              fireStore.collection(References.CategoryFour).doc(path).set({
                   userId:userId,
                   docId:docId,
                   rating:this.state.rating
@@ -140,9 +143,9 @@ export default class Ratings extends Component {
 
       saveReports(data){
         let access = this.props.userId+"_"+this.props.docId;
-        let tempCoins = firebase.firestore().collection('tempCoins').doc(access);
+        let tempCoins = firebase.firestore().collection(References.CategoryTwelve).doc(access);
         let transactionRef = firebase.firestore().collection("TransactionInfo").doc(access);
-        firebase.firestore().collection("Reports").add(data);
+        firebase.firestore().collection(References.CategoryTwentyTwo).add(data);
         this.props.dismissModal();
         tempCoins.delete();
         transactionRef.delete();
@@ -200,23 +203,23 @@ export default class Ratings extends Component {
 
 
                              //node holds doctor total donations for purpose of top doctors
-                             let donationRef = firebase.firestore().collection('donation').doc(docId);
+                             let donationRef = firebase.firestore().collection(References.CategoryTen).doc(docId);
 
-                             let charityMoneyRef = firebase.firestore().collection('charities').doc(charityId);
+                             let charityMoneyRef = firebase.firestore().collection(References.CategorySix).doc(charityId);
 
    
 
 
                              //node holds user total amount of coins i.e coins balance
-                             let ref = firebase.firestore().collection('doctors').doc(this.props.data.hospitalId).collection('credentials').doc(docId);
+                             let ref = firebase.firestore().collection(References.CategoryTWo).doc(this.props.data.hospitalId).collection(References.CategoryTwentyOne).doc(docId);
 
 
-                             let hospitalRef = firebase.firestore().collection("Hospitals").doc(this.props.data.hospitalId);
+                             let hospitalRef = firebase.firestore().collection(References.CategoryOne).doc(this.props.data.hospitalId);
 
 
                             
                              //compile each doctors donation to each charity so that doctor can know donation he made on certain charity when doctor checks donations
-                             let refDontations = firebase.firestore().collection('doctors').doc("doctorsDonationTrack").collection(docId).doc(charityId);
+                             let refDontations = firebase.firestore().collection(References.CategoryTWo).doc(References.CategoryFourteen).collection(docId).doc(charityId);
                              
                              let charityMoney = (parseInt(donationPercentage)/100)*(parseInt(this.props.data.paid));
 

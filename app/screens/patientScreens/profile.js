@@ -13,6 +13,7 @@ import FontAwsome from '../../components/icons/fontawsome'
 import Feather from '../../components/icons/feather'
 import { Text, Layout ,Input,Button} from 'react-native-ui-kitten';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view'
+import References from '../../Utils/refs'
 
 const firestore = firebase.firestore();
 const imageStore = firebase.storage()
@@ -92,12 +93,13 @@ export default class PatientProfile extends Component {
 
     //users google gecoding api to convert longitude and latitude to human readable format
     googleReverseGeo(){
-      fetch(`${GOOGLE_GEOLOCATION_URL} ${this.state.latitude},${this.state.longitude}&key=${GEOCODING_API_KEY}`).then((response)=> response.json()).then((val)=>{
-       
+      fetch(`${GOOGLE_GEOLOCATION_URL} ${this.state.latitude},${this.state.longitude}&key=${GEOCODING_API_KEY}`).then((response)=> response.json()).then((val)=>
+      {
       if(val.results.length < 1){
         this.setState({gettingLocation:false})
         return false;
       };
+       
       let location = val.results[0].address_components;
           let state,city;
           location.forEach((value)=>{
@@ -109,13 +111,13 @@ export default class PatientProfile extends Component {
                }
           })
           
+      const user = firebase.auth().currentUser.uid
       this.setState({gettingLocation:false,state:state,city:city,location:state+" "+city},()=>{
-        firebase.firestore().collection('users').doc(user.uid).collection('personalInfo').doc('info').update({
+        firebase.firestore().collection(References.CategorySeven).doc(user).collection(References.CategoryEighteen).doc(References.CategoryNineteen).update({
           location: state + " " + city
         })
       })
       }).catch((err)=>{
-          console.log(err.results)
           this.setState({gettingLocation:false})
       })   
   }
@@ -157,7 +159,7 @@ export default class PatientProfile extends Component {
       }
       this.setState({editing:!this.state.editing});
       if(user){
-        firebase.firestore().collection('users').doc(user.uid).collection('personalInfo').doc('info').update({
+        firebase.firestore().collection(References.CategorySeven).doc(user.uid).collection(References.CategoryEighteen).doc(References.CategoryNineteen).update({
           firstName:this.state.firstName,
           lastName:this.state.lastName,
           occupation:this.state.occupation,
@@ -199,7 +201,7 @@ export default class PatientProfile extends Component {
                 this.setState({data:data,photo:picture},()=>{
 
                         // Get user information from the below references in firebase
-                        let $ref = firestore.collection('users').doc(firebase.auth().currentUser.uid).collection('personalInfo').doc('info');
+                        let $ref = firestore.collection(References.CategorySeven).doc(firebase.auth().currentUser.uid).collection(References.CategoryEighteen).doc(References.CategoryNineteen);
 
                         $ref.onSnapshot((onSnapshot)=>{
                            if(!onSnapshot.exists)return false;
@@ -282,6 +284,7 @@ export default class PatientProfile extends Component {
                         <Button 
                         appearance="ghost"
                         size="large"
+                      
                         icon={()=> <Feather style={{fontSize:20,color:'#000'}} name="edit" />} 
                          onPress={()=>this.toggleEditing()} >
                       </Button>:<Text></Text>
@@ -361,7 +364,7 @@ export default class PatientProfile extends Component {
                    <View style={styles.bottomContainer}>
                   
                   <Layout style={styles.containerAddMoney}>
-                     <Text style={{color:Colors.btnIfo}} category="h4">$  {this.state.balance || this.state.balance?this.state.balance + '.00':0+'.00'}</Text>
+                     <Text style={{color:Colors.btnIfo}} category="h4">${this.state.balance || this.state.balance?this.state.balance + '.00':0+'.00'}</Text>
                   </Layout>
 
                   <TouchableNativeFeedback onPress={()=>this.props.navigation.navigate('GetCoins')}>

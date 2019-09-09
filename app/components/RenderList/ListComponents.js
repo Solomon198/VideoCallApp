@@ -3,13 +3,13 @@ import {FlatList,TouchableOpacity,StyleSheet,View,Image} from 'react-native'
 import {Card,ListItem,Left,Body,Icon,Right} from 'native-base';
 import {Colors, Typography} from '../../styles/index'
 import moment from 'moment'
-import { Text, Layout ,Input,Button} from 'react-native-ui-kitten';
+import { Text, Avatar ,Input,Button} from 'react-native-ui-kitten';
 
 
 export const ListWithIcon = (Prop)=>  (<FlatList
 data={Prop.data}
 renderItem={({item})=>
-<Card style={styles.ListWithIconCardStyle}>
+<Card  style={styles.ListWithIconCardStyle}>
   <ListItem
     onPress={()=>Prop.onPress(item)}
     noBorder style={{backgroundColor:Colors.overLay}}>
@@ -60,13 +60,14 @@ export const ListWithImage =  (Prop)=>  (<FlatList
              <Card style={styles.ListWithIconCardStyle}>
              <ListItem
                onPress={()=>Prop.onPress(item)}
-               noBorder style={{backgroundColor:Colors.primary}}>
+               noBorder style={[{backgroundColor:Colors.primary}]}>
                    <Left style={[styles.ListWithIconLeftStyle,{maxWidth:50,width:50,marginRight:10}]}>
-                          <View style={styles.ListWithImage}>
+                          {/* <View style={styles.ListWithImage}> */}
                                       { 
                                         //tenary operator that checks for docPhoto while rendering flatlist changes
                                          item.photo?
-                                          <Image source={{uri:item.photo}} style={styles.imgRounded}/>
+                                        //   <Image source={{uri:item.photo}} style={styles.imgRounded}/>
+                                          <Avatar  source={{uri: item.photo}} size="giant" />
                                         :
                                          <View></View>
                                       }
@@ -79,7 +80,7 @@ export const ListWithImage =  (Prop)=>  (<FlatList
                                          :<View></View>
                                       }
                                           
-                          </View>
+                          {/* </View> */}
                    </Left>
                    <Body>
                         <TouchableOpacity style={{paddingLeft:10}} onPress={()=>Prop.onPress(item)}>
@@ -98,7 +99,7 @@ export const ListWithImage =  (Prop)=>  (<FlatList
 
                          {
                              Prop.location?
-                             <Button  textStyle={{fontSize:18,lineHeight:18}} status="success" style={{borderRadius:50,width:150,}} size="tiny">kaduna city</Button>:
+                              <Button   textStyle={{fontSize:14,lineHeight:14}} status="success" style={{borderRadius:50,width:170,}} size="tiny">{item[Prop.locationProp]}</Button>:
                             <View></View>
                          }
 
@@ -152,6 +153,14 @@ const styles = StyleSheet.create({
     ListWithIconCardStyle:{
         backgroundColor:Colors.primary,
         marginBottom:-3,
+        borderRadius:5,
+        paddingTop: 5,
+        paddingBottom: 5,
+        shadowColor: 'rgba(0, 0, 0, 0.5)',
+        shadowOpacity: 0.5,
+        elevation: 6,
+        shadowRadius: 15 ,
+        shadowOffset : { width: 1, height: 13},
     },
     ListWithIconLeftStyle:{
         ...Typography.fonts,
@@ -223,6 +232,15 @@ const styles = StyleSheet.create({
         flexDirection:'row',
         justifyContent:'center',
         alignItems:'center'
-    }
-
+    },
+    shadow:{
+        borderRadius:5,
+        paddingTop: 5,
+        paddingBottom: 5,
+        shadowColor: 'rgba(0, 0, 0, 0.1)',
+        shadowOpacity: 0.8,
+        elevation: 6,
+        shadowRadius: 15 ,
+        shadowOffset : { width: 1, height: 8},
+       }
 })

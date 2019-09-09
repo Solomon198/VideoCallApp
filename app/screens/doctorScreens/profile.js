@@ -13,6 +13,7 @@ import Feather from '../../components/icons/feather'
 import { Thumbnail } from 'react-native-thumbnail-video';
 import { YouTubeStandaloneAndroid } from 'react-native-youtube';
 import {YOUTUBE_DEVELOPER_API_KEY} from 'react-native-dotenv'
+import References from "../../Utils/refs"
 
 
 
@@ -71,8 +72,8 @@ export default class DocProfile extends Component {
     updateProfile(path){
         
         var imageRef = imageStore.ref('profilePictures/'+this.state.data.key);
-        var userRef = firestore.collection('doctors').doc(this.state.data.hospitalKey).
-        collection('credentials').doc(this.state.data.key);
+        var userRef = firestore.collection(References.CategoryTWo).doc(this.state.data.hospitalKey).
+        collection(References.CategorySeventeen).doc(this.state.data.key);
   
         imageRef.putFile(path).then((val)=>{
             imageRef.getDownloadURL().then((downloadUrl)=>{
@@ -133,15 +134,14 @@ export default class DocProfile extends Component {
         links.push(this.state.link3)
       }   
       
-      var $ref = firestore.collection('doctors').doc(this.state.data.hospitalKey).
-      collection('credentials').doc(this.state.data.key);
+      var $ref = firestore.collection(References.CategoryTWo).doc(this.state.data.hospitalKey).
+      collection(References.CategorySeventeen).doc(this.state.data.key);
 
          
          $ref.update({
           firstName:this.state.firstName,
           lastName:this.state.lastName,
           bio:this.state.bio,
-          location:this.state.city + this.state.state,
           youtube:links
         })
       
@@ -174,7 +174,11 @@ export default class DocProfile extends Component {
 
     //get human readable locations from longitude and latitude from gcm gecoding api
     googleReverseGeo(){
+      var docRef = firestore.collection(References.CategoryTWo).doc(this.state.data.hospitalKey).
+                  collection(References.CategorySeventeen).doc(this.state.data.key);
+
       fetch(`${GOOGLE_GEOLOCATION_URL} ${this.state.latitude},${this.state.longitude}&key=${GEOCODING_API_KEY}`).then((response)=> response.json()).then((val)=>{
+
         if(val.results.length < 1){
           this.setState({gettingLocation:false})
           return false;
@@ -190,7 +194,11 @@ export default class DocProfile extends Component {
                }
           })
           
-      this.setState({gettingLocation:false,state:state,city:city})
+      this.setState({gettingLocation:false,location:state+" " + city},()=>{
+         docRef.update({
+           location:state + ' ' + city
+         })
+      })
       }).catch((err)=>{
           this.setState({gettingLocation:false})
       })   
@@ -226,11 +234,10 @@ export default class DocProfile extends Component {
    
 
     componentDidMount(){
-
             storage.getItem('user').then((val)=>{
                 let data = JSON.parse(val);
                 if(data){
-                    let donationRef = firestore.collection('donation').doc(data.key);
+                    let donationRef = firestore.collection(References.CategoryTen).doc(data.key);
 
                     donationRef.onSnapshot((snapshot)=>{
                         if(!snapshot.data())return false;
@@ -243,9 +250,9 @@ export default class DocProfile extends Component {
                    
                 }
                 this.setState({data:data,photo:data.photo},()=>{
-                  var $ref = firestore.collection('doctors').doc(this.state.data.hospitalKey).
-                  collection('credentials').doc(this.state.data.key);
-
+                  var $ref = firestore.collection(References.CategoryTWo).doc(this.state.data.hospitalKey).
+                  collection(References.CategorySeventeen).doc(this.state.data.key);
+  
                   $ref.onSnapshot((onSnapshot)=>{
                     if(!onSnapshot.exists)return false;
 
@@ -383,6 +390,11 @@ export default class DocProfile extends Component {
                              {this.state.city + ' ' + this.state.state}</Text>
                   </View>
 
+                  <View style={styles.editLocationStyle}>
+                             { this.state.location ? 
+                             <View style={styles.greenLocationDot}></View>:<Text></Text>}
+                             <Text style={styles.alignCity}>{this.state.location}</Text>
+                     </View>
                   <Button  icon={()=> this.state.gettingLocation?  <Spinner color={Colors.white}/> :<Icon style={{color:Colors.white,fontSize:16}} name='pin'/>  
                     } onPress={()=>this.getLocation()}>                       
                             Set Location
@@ -425,10 +437,10 @@ export default class DocProfile extends Component {
                        
                         <Layout style={{width:"100%",flexDirection:'row',marginTop:10,marginBottom:10}}>
                           <Layout style={{width:"46%",marginRight:5}}>
-                            <Button status="success" size="small" style={{borderRadius:50}} >Therapist</Button>
+                            <Button textStyle={{fontSize:18,fontWeight:"100",lineHeight:20}} status="success" size="small" style={{borderRadius:50,backgroundColor:Colors.primary,borderColor:Colors.primary}} >Therapist</Button>
                           </Layout>
                           <Layout style={{width:"46%"}}>
-                              <Button status="success" size="small" style={{borderRadius:50}}>{this.state.data.hospital}  </Button>
+                              <Button textStyle={{fontSize:18,fontWeight:"100",lineHeight:20}} status="success" size="small" style={{borderRadius:50,backgroundColor:Colors.primary,borderColor:Colors.primary}}>{this.state.data.hospital}  </Button>
                           </Layout>
                         </Layout>
                        
@@ -474,8 +486,8 @@ export default class DocProfile extends Component {
           
              </View>
                         <Layout style={{width:"100%",flexDirection:'row',marginBottom:10,marginTop:-20}}>
-                          <Layout style={{width:"30%",marginRight:1,justifyContent:'center',backgroundColor:'#f5f5f5',borderRadius:5}}>
-                            <Text style={{alignSelf:'center',color:Colors.primary}} category="h6">${this.state.balance || this.state.balance?this.state.balance + '.00':0+'.00'}</Text>
+                          <Layout style={{width:"30%",marginRight:6,justifyContent:'center',backgroundColor:'#f5f5f5',borderRadius:5}}>
+                            <Text style={{alignSelf:'center',color:Colors.primary,paddingVertical:10,paddingHorizontal:5}} category="h6">${this.state.balance || this.state.balance?this.state.balance + '.00':0+'.00'}</Text>
                           </Layout>
                           <Layout style={{width:"70%"}}>
                              <Button  status="success" >REDEEM</Button>
@@ -650,4 +662,17 @@ const styles = StyleSheet.create({
       backgroundColor:Colors.white,
       marginTop:20,  
   },
+  editLocationStyle:{
+    flexDirection:'row',
+    alignItems:'center',
+    marginTop:10,
+    alignContent:'center'},
+    alignCity:{textAlign:'center'},
+    greenLocationDot:{
+      width:10,
+      height:10,
+      borderRadius:100,
+      backgroundColor:Colors.forestgreen,
+      marginRight:5,
+      alignSelf:'center'},
 })

@@ -5,6 +5,8 @@ import Toolbar from '../../components/Toolbar/Toolbar';
 import {Loading} from '../../components/Loader/loader';
 import {ListWithImage} from '../../components/RenderList/ListComponents'
 import {Colors} from '../../styles/index'
+import References from '../../Utils/refs'
+import DefaultCustoms from '../../Utils/strings';
 
 export default class Doctors extends Component {
     constructor(props){
@@ -30,7 +32,7 @@ export default class Doctors extends Component {
 
       var database = firebase.firestore();       
  
-      var db = database.collection("doctors").doc(this.state.data.hospital.key).collection('credentials')
+      var db = database.collection(References.CategoryTWo).doc(this.state.data.hospital.key).collection('credentials')
              
               
       db.onSnapshot((querySnapshot)=>{        
@@ -44,7 +46,8 @@ export default class Doctors extends Component {
                     bio:doc.data().bio?doc.data().bio:'',
                     photo:doc.data().photo?doc.data().photo:'',
                     paused:doc.data().paused,
-                    incomplete:false
+                    incomplete:false,
+                    location:doc.data().location,
                 }      
                   if(!info.name || info.youtube.length < 1 || !info.bio || !info.photo){
                       info.incomplete = true;
@@ -76,7 +79,8 @@ export default class Doctors extends Component {
         data["youtubeIds"] = param.youtube;
         data["hospitalKey"] = this.state.data.hospital.key;
         data["hospitalName"] = this.state.data.hospital.name;
-        data["userName"]  = this.state.data.user.name;        
+        data["userName"]  = this.state.data.user.name;    
+        data["location"]    = param.location
 
         this.props.navigation.navigate('SetAppointMent',data);
     }
@@ -99,13 +103,15 @@ export default class Doctors extends Component {
             
         return(          
           <Container style={{backgroundColor:Colors.containers}}>    
-                    <Toolbar canGoBack goBack={()=>this.props.navigation.goBack()} title='Doctors'/>               
+                    <Toolbar canGoBack goBack={()=>this.props.navigation.goBack()} title={DefaultCustoms.DoctorsList}/>               
                     {this.state.doctors.length > 0?
                         <ListWithImage 
                         data = {this.state.doctors}
                         onPress={(item)=> this.nextNavigation(item)}
                         iconColor={Colors.white}    
                         showItem={["name"]}
+                        location
+                        locationProp="location"
                         noDoctors={this.state.noDoctors}
                       />
                       :

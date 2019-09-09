@@ -6,6 +6,9 @@ import Toolbar from '../../components/Toolbar/Toolbar'
 import {ListWithImage} from '../../components/RenderList/ListComponents'
 import {Colors} from '../../styles/index'
 import {Loading} from '../../components/Loader/loader'
+import References from '../../Utils/refs'
+import DefaultCustoms from '../../Utils/strings';
+
 const storage = AsyncStorage;
 const firestore = firebase.firestore()
 
@@ -44,7 +47,7 @@ export default class TopDoctors extends Component {
                 this.setState({data:data});
             })
 
-            let db = firestore.collection('donation')
+            let db = firestore.collection(References.CategoryTen)
 
             db.onSnapshot((querySnapshot)=>{        
                 let docarray = [];    
@@ -93,7 +96,7 @@ export default class TopDoctors extends Component {
 
 
     getDocInfo(items){
-        var db = firestore.collection("doctors").doc(items.hospitalKey).collection('credentials').doc(items.key);
+        var db = firestore.collection(References.CategoryTWo).doc(items.hospitalKey).collection(References.CategoryTwentyOne).doc(items.key);
         db.get().then((doc)=>{
             let item = {
 
@@ -129,7 +132,7 @@ export default class TopDoctors extends Component {
             
         return(          
           <Container style={styles.container}> 
-              <Toolbar title='Top Doctors'/>
+              <Toolbar title={DefaultCustoms.TopDoctors}/>
               {
                    this.state.donations.length < 1?
                   <Loading show={true}/>
@@ -138,7 +141,7 @@ export default class TopDoctors extends Component {
                    onPress={(item)=> this.getDocInfo(item)}
                    data = {this.state.donations}
                    iconColor={Colors.white}   
-                   showItem={["name","key"]}
+                   showItem={["name"]}
                    location
                  />
                     }   
@@ -153,3 +156,35 @@ const styles = StyleSheet.create({
        backgroundColor:Colors.containers
    }
 })
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

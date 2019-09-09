@@ -3,6 +3,7 @@ import {Container,Text,List,Body, ListItem} from 'native-base'
 import * as firebase from 'react-native-firebase';
 import {StyleSheet,View,Image,ScrollView} from 'react-native';
 import Toolbar from '../../components/Toolbar/Toolbar';
+import References from '../../Utils/refs'
 
 import { Colors, Typography } from '../../styles';
    
@@ -39,7 +40,7 @@ export default class ViewDocProfile extends Component {
                         // Get user information from the below references in firebase
                         const docId = this.props.navigation.state.params.key;
                         const hospitalKey= this.props.navigation.state.params.hospitalKey;
-                        let $ref = firestore.collection('doctors').doc(hospitalKey?hospitalKey:"C97QHFhCdxJXvGlVGVj2").collection("credentials").doc(docId);
+                        let $ref = firestore.collection(References.CategoryTWo).doc(hospitalKey?hospitalKey:"C97QHFhCdxJXvGlVGVj2").collection(References.CategoryTwentyOne).doc(docId);
 
                         $ref.get().then((onSnapshot)=>{
                            if(!onSnapshot.exists)return false;

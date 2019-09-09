@@ -10,6 +10,8 @@ import MaterialIcons from '../../components/icons/material'
 import ReportComponent from '../../components/Rating/reportOnly'
 import {toast} from '../../components/toast'
 import { convertToMp3 } from '../../Utils/functions';
+import References from "../../Utils/refs"
+import DefaultCus from '../../Utils/strings'
 var RNFS = require('react-native-fs');
 
 const fireStore = firebase.firestore();
@@ -44,14 +46,14 @@ export default class Ratings extends Component {
  
     }   
 
-    ref   = fireStore.collection("userRating");
+    ref   = fireStore.collection(References.CategoryEight);
 
   
 
 
     saveRating(userId,docId){
         let path = docId+ "_" +userId
-              fireStore.collection("userRating").doc(path).set({
+              fireStore.collection(References.CategoryEight).doc(path).set({
                   userId:userId,
                   docId:docId,
                   rating:this.state.rating
@@ -122,9 +124,9 @@ export default class Ratings extends Component {
       saveReports(data){
         let access = this.state.uid+"_"+this.state.docKey;
         let transactionRef = firebase.firestore().collection("TransactionInfo").doc(access);
-        let tempCoins = firebase.firestore().collection('tempCoins').doc(access);
+        let tempCoins = firebase.firestore().collection(References.CategoryTwelve).doc(access);
 
-        firebase.firestore().collection("Reports").add(data);
+        firebase.firestore().collection(References.CategoryTwentyTwo).add(data);
         toast("Report sent we will look into it");
         transactionRef.delete();
         tempCoins.delete();
@@ -256,23 +258,23 @@ export default class Ratings extends Component {
                             this.saveReports(data)
                         }else{
                              //node holds doctor total donations for purpose of top doctors
-                             let donationRef = firebase.firestore().collection('donation').doc(docKey);
+                             let donationRef = firebase.firestore().collection(References.CategoryTen).doc(docKey);
                             
-                             let charityMoneyRef = firebase.firestore().collection('charities').doc(charityId);
-                             let hospitalRef = firebase.firestore().collection("Hospitals").doc(hospitalKey);
+                             let charityMoneyRef = firebase.firestore().collection(References.CategorySix).doc(charityId);
+                             let hospitalRef = firebase.firestore().collection(References.CategoryOne).doc(hospitalKey);
 
                                
                             
                             
                              //node holds user total amount of coins i.e coins balance
-                             let ref = firebase.firestore().collection('doctors').doc(hospitalKey).collection('credentials').doc(docKey);
+                             let ref = firebase.firestore().collection(References.CategoryTWo).doc(hospitalKey).collection(References.CategoryTwentyOne).doc(docKey);
                             
                             
                             
                             
                                                         
                             //compile each doctors donation to each charity so that doctor can know donation he made on certain charity when doctor checks donations
-                                                         let refDontations = firebase.firestore().collection('doctors').doc("doctorsDonationTrack").collection(docKey).doc(charityId);
+                                                         let refDontations = firebase.firestore().collection(References.CategoryTWo).doc(References.CategoryFourteen).collection(docKey).doc(charityId);
                                                          
                                                          let charityMoney = (parseInt(donationPercentage)/100)*(parseInt(coins));
                             
@@ -352,10 +354,14 @@ export default class Ratings extends Component {
             })
             storage.getItem("donationInfo").then((val)=>{
                 let data = JSON.parse(val);
-                const ref =  firebase.database().ref('/status/'+this.state.docKey);
-                  ref.set({name:this.state.docName,status:'busy'})
+                const ref =  firebase.database().ref('/'+References.CateogryEleven+'/'+this.state.docKey);
+                  ref.set({name:this.state.docName,status:'offline'})
                 this.setState({uid:data.uid,docKey:data.docKey})
             })
+
+            let callDate = new Date().getTime();
+            let strDate = callDate + '';
+            storage.setItem('lastCalled',strDate);
     }    
 
 

@@ -9,6 +9,9 @@ import Toolbar from '../../components/Toolbar/Toolbar';
 import {Loading} from '../../components/Loader/loader'
 import {ListWithImage} from '../../components/RenderList/ListComponents'
 import { Colors } from '../../styles';
+import References from '../../Utils/refs'
+import DefaultCustoms from '../../Utils/strings'
+
 const storage = AsyncStorage;
 
 
@@ -39,7 +42,7 @@ export default class PatientHistory extends Component {
             let data = JSON.parse(val);
             this.setState({user:data},()=>{
                 var database = firebase.firestore();    
-                var db = database.collection("users").doc(data.uid).collection('history').limit(40)
+                var db = database.collection(References.CategorySeven).doc(data.uid).collection(References.CategoryTwenty).limit(40)
                           
                 
                     
@@ -83,7 +86,7 @@ export default class PatientHistory extends Component {
         return(          
           <Container style={{backgroundColor:Colors.containers}}>    
                       <Toolbar 
-                         title='Call History'
+                         title={DefaultCustoms.CallHistoryPage}
                          canGoBack
                          goBack={()=>this.props.navigation.goBack()}
                       />                    

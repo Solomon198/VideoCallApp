@@ -6,7 +6,7 @@ import Toolbar from '../../components/Toolbar/Toolbar';
 import { Loading } from '../../components/Loader/loader';
 import { ListWithImage } from '../../components/RenderList/ListComponents';
 import { Colors } from '../../styles';
-
+import References from "../../Utils/refs"
 const storage = AsyncStorage;
 
 export default class Charity extends Component {
@@ -48,17 +48,17 @@ export default class Charity extends Component {
 
       //temporal location for storing amount for appointment which will be released after call between patient and doctor
       let direction = uid + "_" + docKey;
-      let userDonated = firebase.firestore().collection('tempCoins').doc(direction);
+      let userDonated = firebase.firestore().collection(References.CategoryTwelve).doc(direction);
       
       //node holds doctor total donations for purpose of top doctors
-      let donationRef = firebase.firestore().collection('donation').doc(docKey);
+      let donationRef = firebase.firestore().collection(References.CategoryTen).doc(docKey);
      
 
       //node holds user total amount of coins i.e coins balance
-      let ref = firebase.firestore().collection('users').doc(docKey).collection('coins').doc('amount');
+      let ref = firebase.firestore().collection(References.CategorySeven).doc(docKey).collection(References.CategoryThirteen).doc(References.CategoryFiftenn);
 
        //compile each doctors donation to each charity so that doctor can know donation he made on certain charity when doctor checks donations
-      let refDontations = firebase.firestore().collection('doctors').doc("doctorsDonationTrack").collection(docKey).doc(charityKey);
+      let refDontations = firebase.firestore().collection(References.CategoryTWo).doc(References.CategoryFourteen).collection(docKey).doc(charityKey);
 
 
       let doctorName = this.state.data.name;
@@ -118,7 +118,7 @@ export default class Charity extends Component {
                 this.setState({data:data});
             })
 
-            var db = firebase.firestore().collection("charities")
+            var db = firebase.firestore().collection(References.CategorySix)
                        
                      
             db.onSnapshot((querySnapshot)=>{                 

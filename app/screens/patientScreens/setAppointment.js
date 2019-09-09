@@ -12,6 +12,7 @@ import {Colors, Typography} from '../../styles/index'
 import { AppStatus } from '../../Utils/functions';
 import { Text, Layout ,Button,Radio} from 'react-native-ui-kitten';
 import { ButtonComponent } from 'react-native-ui-kitten/ui/button/button.component';
+import References from '../../Utils/refs'
 
 
 const firestore = firebase.firestore();
@@ -42,7 +43,7 @@ export default class SetAppointMent extends Component {
         this.setState({visible:false})
     }
     confirmBooking(){
-        let ref = firestore.collection('users').doc(firebase.auth().currentUser.uid).collection('personalInfo').doc('info');
+        let ref = firestore.collection(References.CategorySeven).doc(firebase.auth().currentUser.uid).collection(References.CategoryEighteen).doc(References.CategoryNineteen);
         const {price} = this.state.data;
 
         ref.get().then((snapshot)=>{
@@ -82,14 +83,14 @@ export default class SetAppointMent extends Component {
 
     //Saving appointment to firebase after collecting neccessary information from user like date and credentials that will be neccessary during call and saving of history
     sendAppointMent(){
-        const {doctorKey,doctorName,hospitalKey,doctorPhoto,price,userName} = this.state.data;
+        const {doctorKey,doctorName,hospitalKey,doctorPhoto,price,location} = this.state.data;
         let FB = firebase.firestore();
 
         let appointmentId = doctorKey+"-"+firebase.auth().currentUser.uid;
 
-        let appointments = FB.collection('Appointments').doc(appointmentId);
-        let hospitalRef = FB.collection("Hospitals").doc(hospitalKey);
-        let doctorRef = FB.collection("doctors").doc(hospitalKey).collection("credentials").doc(doctorKey);
+        let appointments = FB.collection(References.CategoryThree).doc(appointmentId);
+        let hospitalRef = FB.collection(References.CategoryOne).doc(hospitalKey);
+        let doctorRef = FB.collection(References.CategoryTWo).doc(hospitalKey).collection(References.CategoryTwentyOne).doc(doctorKey);
         
 
        
@@ -106,11 +107,12 @@ export default class SetAppointMent extends Component {
             paid:parseInt(price),
             userLocation:this.state.userLocation,
             userOccupation:this.state.userOccupation,
-            date:new Date().getTime()
+            date:new Date().getTime(),
+            docLocation:location
         }   
 
 
-        let ref = firestore.collection('users').doc(firebase.auth().currentUser.uid).collection('personalInfo').doc('info');
+        let ref = firestore.collection(References.CategorySeven).doc(firebase.auth().currentUser.uid).collection(References.CategoryEighteen).doc(References.CategoryNineteen);
 
 
 
@@ -203,7 +205,7 @@ export default class SetAppointMent extends Component {
 
         let appointmentId = doctorKey+"-"+firebase.auth().currentUser.uid;
 
-        let appointments = FB.collection('Appointments').doc(appointmentId);
+        let appointments = FB.collection(References.CategoryThree).doc(appointmentId);
          
         appointments.get().then((valData)=>{
            if(valData.exists){
@@ -256,18 +258,6 @@ export default class SetAppointMent extends Component {
                </View>    
              
              
-             
-             
-             
-             
-             
-             
-             
-             
-             
-             
-             
-             
               
              
              
@@ -299,7 +289,7 @@ export default class SetAppointMent extends Component {
                             <Text style={{alignSelf:'center',color:Colors.primary}} category="h6">${price+'.00'}</Text>
                           </Layout>
                           <Layout style={{width:"66%",marginRight:10}}>
-                             <Button style={{borderColor:Colors.lightGray,borderWidth:2,marginRight:10}} textStyle={{letterSpacing:2}} onPress={()=>this.confirmBooking()} status="success" >SET APPOINTMENT</Button>
+                             <Button style={[{borderColor:Colors.lightGray,borderWidth:2,marginRight:10},styles.shadow]} textStyle={{letterSpacing:2}} onPress={()=>this.confirmBooking()} status="success" >SET APPOINTMENT</Button>
                           </Layout>
                         </Layout>
 
@@ -413,6 +403,7 @@ profilePic:{
         marginTop:10,
         marginLeft:10
     },
+ 
     textStyle:{
         color:Colors.baseText
     },
@@ -430,5 +421,15 @@ profilePic:{
        alignContent:'center',
        alignItems:'center',
        margin:20
+   },
+   shadow:{
+    borderRadius:5,
+    paddingTop: 5,
+    paddingBottom: 5,
+    shadowColor: 'rgba(0, 0, 0, 0.1)',
+    shadowOpacity: 0.8,
+    elevation: 6,
+    shadowRadius: 15 ,
+    shadowOffset : { width: 1, height: 8},
    }
 })

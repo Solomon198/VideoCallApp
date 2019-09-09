@@ -8,6 +8,8 @@ import {Loading} from '../../components/Loader/loader'
 import { Colors, Typography } from '../../styles';
 import { AppStatus } from '../../Utils/functions';
 import { Text, Layout ,Input,Button} from 'react-native-ui-kitten';
+import References from '../../Utils/refs'
+import DefaultCustoms from '../../Utils/strings';
 
 
 const firestore = firebase.firestore();
@@ -70,7 +72,7 @@ export default class GetCoins extends Component {
        storage.getItem('user').then((val)=>{
            if(val){
                let data = JSON.parse(val);
-               let ref = firestore.collection('users').doc(firebase.auth().currentUser.uid).collection('personalInfo').doc('info');
+               let ref = firestore.collection(References.CategorySeven).doc(firebase.auth().currentUser.uid).collection('personalInfo').doc('info');
                ref.get().then((snapshot)=>{
                    let value = snapshot.data()?snapshot.data().amount:'';
                    if(value){
@@ -115,7 +117,7 @@ export default class GetCoins extends Component {
                       
         return(          
           <Container style={styles.Container}> 
-               <Toolbar title='Get Coins' canGoBack={true} goBack={()=>this.props.navigation.goBack()}/>
+               <Toolbar title={DefaultCustoms.GetCoinsHeading} canGoBack={true} goBack={()=>this.props.navigation.goBack()}/>
                {this.renderLoader()}
                     <View style={styles.subContainer}>
                         {/* <Text style={styles.textStyle} note>Amount</Text> */}

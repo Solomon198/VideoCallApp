@@ -7,6 +7,8 @@ import SplashScreen from 'react-native-splash-screen'
 import { Loading } from '../../components/Loader/loader';
 import { Colors } from '../../styles';
 import {ListWithIcon,ListWithImage} from '../../components/RenderList/ListComponents'
+import References from "../../Utils/refs"
+
 
 const storage = AsyncStorage;
 
@@ -40,7 +42,7 @@ export default class Donation extends Component {
                 let data = JSON.parse(val);
                 this.setState({data:data},()=>{
                             let docKey = this.state.data.key;
-                            var db = firebase.firestore().collection('doctors').doc("doctorsDonationTrack").collection(docKey);
+                            var db = firebase.firestore().collection(References.CategoryTWo).doc(References.CategoryFourteen).collection(docKey);
                             
                             db.get().then((querySnapshot)=>{                 
                                 let docarray = [];    

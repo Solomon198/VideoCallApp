@@ -9,6 +9,8 @@ import { toast } from '../toast';
 import MaterialIcons from '../icons/material';
 import firebase, { Firebase } from 'react-native-firebase'
 import { startRecorder ,stopRecorder,convertToMp3} from '../../Utils/functions';
+import References from '../../Utils/refs'
+import DefaultCus from '../../Utils/strings'
 const fireStore = firebase.firestore();
 var RNFS = require('react-native-fs');
 const storage = AsyncStorage;
@@ -26,7 +28,7 @@ export default class ReportComponent extends Component {
         editable:false
     }  
     
-     ref   = fireStore.collection("Rating");
+     ref   = fireStore.collection(References.CategoryFour);
 
   
 

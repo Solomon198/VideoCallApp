@@ -6,6 +6,9 @@ import Toolbar from '../../components/Toolbar/Toolbar';
 import { ListWithImage } from '../../components/RenderList/ListComponents';
 import { Loading } from '../../components/Loader/loader';
 import { Colors } from '../../styles';
+import References from "../../Utils/refs"
+import DefaultCustoms from '../../Utils/strings'
+
 const storage = AsyncStorage;
 
 
@@ -35,7 +38,7 @@ export default class DocHistory extends Component {
             let data = JSON.parse(val);
             this.setState({user:data},()=>{
                 var database = firebase.firestore();    
-                var db = database.collection("users").doc(data.key).collection('history').limit(100);
+                var db = database.collection(References.CategorySeven).doc(data.key).collection('history').limit(100);
                        
                 
                     
@@ -79,7 +82,7 @@ export default class DocHistory extends Component {
                      <Toolbar
                         canGoBack
                         goBack={()=>this.props.navigation.goBack()}
-                        title='Call History'/>                     
+                        title={DefaultCustoms.CallHistoryPage}/>                     
                       {this.state.history.length > 0?
                           <ListWithImage 
                           rightItem={true}

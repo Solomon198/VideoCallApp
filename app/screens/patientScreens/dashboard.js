@@ -9,6 +9,9 @@ import type { Notification } from 'react-native-firebase';
 import {ListWithImage} from '../../components/RenderList/ListComponents';
 import {Loading} from '../../components/Loader/loader'
 import {deleteDirectory} from '../../Utils/functions'
+import References from '../../Utils/refs'
+import DefaultCustoms from '../../Utils/strings'
+
 
 const messaging = firebase.messaging();
 
@@ -155,7 +158,7 @@ export default class PatientDashBoard extends Component {
 
         var database = firebase.firestore();    
  
-      var db = database.collection("Hospitals")
+      var db = database.collection(References.CategoryOne)
              
            
           
@@ -197,7 +200,7 @@ export default class PatientDashBoard extends Component {
     render(){  
         return(          
           <Container style={{backgroundColor:Colors.white}}>    
-                      <Toolbar title='Hospitals' />   
+                      <Toolbar title={DefaultCustoms.HospitalList} />   
 
 
                       {

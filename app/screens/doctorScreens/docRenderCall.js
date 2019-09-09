@@ -4,6 +4,8 @@ import {AsyncStorage,View,BackHandler,BackAndroid,Platform} from 'react-native'
 import * as firebase from 'react-native-firebase';
 import moment from 'moment'
 import { Colors } from '../../styles';
+import References from "../../Utils/refs"
+
 
 const storage = AsyncStorage
 const fireStore = firebase.firestore();
@@ -58,13 +60,13 @@ export default class DocRenderCall extends Component{
   //when call is finished
   onCallFinished(callDuration){
     
-    const $ref = dataBase.ref(`listeners/${this.state.channel}/`);
+    const $ref = dataBase.ref(`${References.CategorySixteen}/${this.state.channel}/`);
     $ref.set({callerName:false,busy:false,added:345,channel:'eee',endCall:false,uid:false});
-    let location = firebase.firestore().collection('users').doc(this.state.channel).collection('history');
+    let location = firebase.firestore().collection(References.CategorySeven).doc(this.state.channel).collection('history');
     let historyTime = moment(Date.now()).format('LLLL')
     location.add({callerName:this.state.userName,duration:this.callDurationCalculator(callDuration),date:historyTime})
     this.deleteAppointment();
-    firebase.database().ref('status/'+this.state.channel)
+    firebase.database().ref(`${References.CateogryEleven}/`+this.state.channel)
            .set({name:this.state.doctorName,status:'online'}).then(()=>{
      })
   }   
@@ -95,7 +97,7 @@ export default class DocRenderCall extends Component{
    //adds patient time of call on call. note whenever a request to add time is made only 1min is added on both side
    addPatientTime(){
     const randomNumber = Math.round(Math.random() * 1000000);
-    dataBase.ref(`listeners/${this.state.uid}/`).set({addTime:true,added:randomNumber,callRejected:false}).then((val)=>{
+    dataBase.ref(`${References.CategorySixteen}/${this.state.uid}/`).set({addTime:true,added:randomNumber,callRejected:false}).then((val)=>{
 
     }).catch((err)=>this.setState({modal:false}))
 }
@@ -119,7 +121,7 @@ export default class DocRenderCall extends Component{
   endCall(){   
     let uid = this.state.uid;
     const randomNumber = Math.round(Math.random() * 1000000);
-    dataBase.ref(`listeners/${uid}/`).set({callerName:this.state.doctorName,added:randomNumber,online:true,addTime:false,endCall:true,uid:false}).then((val)=>{
+    dataBase.ref(`${References.CategorySixteen}/${uid}/`).set({callerName:this.state.doctorName,added:randomNumber,online:true,addTime:false,endCall:true,uid:false}).then((val)=>{
       this.setState({channel:uid});
     }).catch((err)=>this.setState({modal:false}))
   }

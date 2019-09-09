@@ -11,6 +11,9 @@ import {ListWithImage} from '../../components/RenderList/ListComponents'
 import { Colors } from '../../styles';
 import {Loading} from '../../components/Loader/loader'
 import { deleteDirectory, permissionCheck, startRecorder, AppStatus } from '../../Utils/functions';
+import References from '../../Utils/refs'
+import DefaultCustoms from '../../Utils/strings'
+
 
 
      
@@ -53,7 +56,7 @@ export default class AppointMents extends Component {
     //This methode is called every time the app is started i.e waked after killed
     //The methode get the status of doctors and listened for any changes afterwards and update the appointment list with the status.
     getStatus(){
-      const ref = firebase.database().ref('/status/');
+      const ref = firebase.database().ref(`/${References.CateogryEleven}/`);
       ref.once('value',(onSnapshot)=>{
         if(!onSnapshot.exists())return false;
         let arrayOfSnapshot = [];
@@ -110,7 +113,7 @@ export default class AppointMents extends Component {
         ...item
       }
       let wrapData = JSON.stringify(videoData);
-      const statusRef =  dataBase.ref(`status/${item.channel}/`);
+      const statusRef =  dataBase.ref(`${References.CateogryEleven}/${item.channel}/`);
     
      statusRef.once("value",(onSnapshot)=>{
         if(!onSnapshot.exists()) return  storage.setItem('videoData',wrapData).then((val)=>{
@@ -144,7 +147,7 @@ export default class AppointMents extends Component {
         const user = firebase.auth().currentUser;
         const userName = this.state.firstName + ' ' + this.state.lastName;
         const randomNumber = Math.round(Math.random() * 1000000);   
-        dataBase.ref(`listeners/${item.channel}/`).set({callerName:userName,added:randomNumber,online:true,addTime:false,endCall:false,uid:user.uid,photo:user.photoURL,occupation:this.state.occupation,location:this.state.location}).then((val)=>{    
+        dataBase.ref(`${References.CategorySixteen}/${item.channel}/`).set({callerName:userName,added:randomNumber,online:true,addTime:false,endCall:false,uid:user.uid,photo:user.photoURL,occupation:this.state.occupation,location:this.state.location}).then((val)=>{    
           this.setState({showLive:true,channel:item.channel,item:item,callerName:userName,docKey:item.channel});
           this.props.navigation.navigate('CallStack');
           storage.setItem("docId",item.channel);
@@ -161,7 +164,7 @@ export default class AppointMents extends Component {
                
               
                 //getting user name
-                let $ref = database.collection('users').doc(firebase.auth().currentUser.uid).collection('personalInfo').doc('info');
+                let $ref = database.collection(References.CategorySeven).doc(firebase.auth().currentUser.uid).collection(References.CategoryEighteen).doc(References.CategoryNineteen);
 
                 $ref.onSnapshot((onSnapshot)=>{
                    if(!onSnapshot.exists)return false;
@@ -179,7 +182,7 @@ export default class AppointMents extends Component {
                 //getting appointments from firebase and listnening for changes
                 let uid = firebase.auth().currentUser.uid;
                        
-                let appointments = database.collection('Appointments').where("patId","==",uid)
+                let appointments = database.collection(References.CategoryThree).where("patId","==",uid)
 
               appointments.onSnapshot((querySnapshot)=>{                    
                   let docarray = [];    
@@ -201,7 +204,11 @@ export default class AppointMents extends Component {
                                 userPhoto:doc.data().userPhoto,
                                 patName:doc.data().patName,
                                 docName:doc.data().docName,
-                                date:doc.data().date
+                                date:doc.data().date,
+                                docLocation:doc.data().docLocation,
+                                userOccupation:doc.data().userOccupation
+                            
+
 
 
                             })    
@@ -272,7 +279,7 @@ export default class AppointMents extends Component {
          return(             
           <Container style={{backgroundColor:Colors.containers}}>    
                   <View style={{flex:1,backgroundColor:Colors.containers}}>
-                     <Toolbar title='Appointments'/>             
+                     <Toolbar title={DefaultCustoms.AppointmentPage}/>             
 
                           
                       {  //tenary operator that checks for empty list of appointments
@@ -287,9 +294,10 @@ export default class AppointMents extends Component {
                            location
                            getBgColor={(item)=> this.getColorForPresence(item)}
                            leftItem
+                           locationProp="docLocation"
                            degree = '270deg'
                            iconColor={Colors.forestgreen}
-                           showItem={["name"]}
+                           showItem={["name",]}
                          />
                      
                        : 

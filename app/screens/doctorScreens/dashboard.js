@@ -13,6 +13,10 @@ import { Loading } from '../../components/Loader/loader';
 import { Colors, Typography } from '../../styles';
 import {deleteDirectory, permissionCheck} from '../../Utils/functions'
 import { Toggle,Text } from 'react-native-ui-kitten';
+import References from "../../Utils/refs"
+import DefaultCustoms from '../../Utils/strings'
+
+
 
 
 
@@ -93,7 +97,7 @@ export default class DocDashboard extends Component {
     broadcastPresence(){
       storage.getItem('status').then((val)=>{
         if(val == 'offline')return false;
-        firebase.firestore().collection('status').doc(this.state.docKey)
+        firebase.firestore().collection(References.CateogryEleven).doc(this.state.docKey)
         .set({name:this.state.doctorName,status:'online'}).then(()=>{
         })
         this.sendNotification()
@@ -107,16 +111,10 @@ export default class DocDashboard extends Component {
     componentDidMount(){     
         SplashScreen.hide();
         storage.getItem('user').then((val)=>{
-          storage.getItem('status').then((status)=>{
-              status = status?status:'offline'
-              status = status == 'online' ?true:false
               let data = JSON.parse(val);
-              this.setState({docKey:data.key,docName:data.name,online:status},()=>{
-                  const ref =  firebase.database().ref('/status/'+this.state.docKey);
-                  ref.onDisconnect();
-                  ref.set({name:this.state.docName,status:'offline'})
+              this.setState({docKey:data.key,docName:data.name,online:false},()=>{
+    
               })  
-          })
            
         })
        
@@ -143,7 +141,7 @@ export default class DocDashboard extends Component {
            
             });
 
-            const $ref = dataBase.ref(`listeners/${data.key}/`);
+            const $ref = dataBase.ref(`${References.CategorySixteen}/${data.key}/`);
             
             //call listener 
             $ref.set({callerName:false,busy:false,added:345,channel:'eee',endCall:false,uid:false}).then((val)=>{
@@ -176,7 +174,7 @@ export default class DocDashboard extends Component {
                 //gets all appointment for doctor   
               
               
-                let appointments = database.collection('Appointments').where("docId","==",data.key)
+                let appointments = database.collection(References.CategoryThree).where("docId","==",data.key)
                       
                      
                     
@@ -204,8 +202,6 @@ export default class DocDashboard extends Component {
                     docName:doc.data().docName,
                     userLocation:doc.data().userLocation,
                     userOccupation:doc.data().userOccupation
-
-
                 })    
               })       
                   this.setState({                  
@@ -242,7 +238,7 @@ export default class DocDashboard extends Component {
       storage.setItem('videoData',wrapData).then((val)=>{ 
         this.setState({isUserFree:false,calling:false,showLive:true},()=>
         {this.props.navigation.navigate('DocCallStack');
-        const $ref = dataBase.ref(`listeners/${this.state.docKey}/`);
+        const $ref = dataBase.ref(`${References.CategorySixteen}/${this.state.docKey}/`);
         $ref.set({callerName:false,online:true,added:345,channel:'eee',endCall:false,uid:false,busy:true});
         StopSound()
       }    
@@ -251,7 +247,7 @@ export default class DocDashboard extends Component {
          //
       })
      
-      firebase.database().ref('/status/'+this.state.docKey)
+      firebase.database().ref('/'+ References.CateogryEleven+'/'+this.state.docKey)
       .set({name:this.state.docName,status:'busy'});
       storage.setItem("status",'busy');
           
@@ -273,10 +269,10 @@ export default class DocDashboard extends Component {
     //method sends signal to the node that patient is listening to with properties telling it call is rejected
     doctorRejectCall(){    
       const randomNumber = Math.round(Math.random() * 1000000);
-      dataBase.ref(`listeners/${this.state.uid}/`).set({addTime:true,added:randomNumber,callRejected:true}).then((val)=>{
+      dataBase.ref(`${References.CategorySixteen}/${this.state.uid}/`).set({addTime:true,added:randomNumber,callRejected:true}).then((val)=>{
   
       }).catch((err)=>this.setState({modal:false}))
-      firebase.database().ref('/status/'+this.state.docKey)
+      firebase.database().ref('/'+References.CateogryEleven+'/'+this.state.docKey)
       .set({name:this.state.docName,status:'online'});
       storage.setItem("status",'online');
     }
@@ -346,15 +342,43 @@ export default class DocDashboard extends Component {
     togglePresence(){
         this.setState({online:!this.state.online},()=>{
             if(this.state.online){
-                    let ref = firebase.database().ref('/status/'+this.state.docKey);
-                    
-                    ref.set({name:this.state.docName,status:'online'}).then(()=>{
+                    storage.getItem('lastCalled').then((lastCalled)=>{
+                      let nowDate = new Date().getTime();
+                      if(lastCalled){
+                        let lastCalledVal = parseInt(lastCalled)/1000;
+                        let min = ((nowDate/1000) - lastCalledVal)/60;
+                        if(min >= 30){
+                          let ref = firebase.database().ref(`${References.CateogryEleven}/`+this.state.docKey);
+                          let setNewDate = new Date().getTime();
+                          let setNewDateformat = setNewDate + '';
+                          storage.setItem("lastCalled",setNewDateformat);
+                          ref.set({name:this.state.docName,status:'online'}).then(()=>{
+                          })
+                          ref.onDisconnect().set({name:this.state.docName,status:'offline'});
+                         
+                          this.sendNotification()
+                        }else{
+                          let ref = firebase.database().ref(`${References.CateogryEleven}/`+this.state.docKey);
+                          
+                         ref.set({name:this.state.docName,status:'online'}).then(()=>{
+                         })
+                         ref.onDisconnect().set({name:this.state.docName,status:'offline'});
+                           }
+                          }else{
+                          let ref = firebase.database().ref(`${References.CateogryEleven}/`+this.state.docKey);
+                          let setNewDate = new Date().getTime();
+                          let setNewDateformat = setNewDate + '';
+                          storage.setItem("lastCalled",setNewDateformat);
+                          ref.set({name:this.state.docName,status:'online'}).then(()=>{
+                          })
+                          ref.onDisconnect().set({name:this.state.docName,status:'offline'});
+                         
+                          this.sendNotification()
+                          }      
                     })
-                    ref.onDisconnect().set({name:this.state.docName,status:'offline'})
-                    this.sendNotification()
             }else{
                 storage.setItem('status','offline').then(()=>{
-                 firebase.database().ref('/status/'+this.state.docKey)
+                 firebase.database().ref(`${References.CateogryEleven}/`+this.state.docKey)
                 .set({name:this.state.docName,status:'offline'})
                 })
                 
@@ -375,7 +399,7 @@ export default class DocDashboard extends Component {
                               
                           </Left>
                           <Body style={{justifyContent:'center',alignContent:'center',alignItems:'center'}}>
-                            <Text  style={{textAlign:'center',alignSelf:'center',color:"#fff",marginLeft:30}}>Appointments</Text>
+                            <Text  style={{textAlign:'center',alignSelf:'center',color:"#fff",marginLeft:30}}>{DefaultCustoms.AppointmentPage}</Text>
                           </Body>
                           <Right style={{width:100}}>
                             <Toggle
@@ -394,7 +418,8 @@ export default class DocDashboard extends Component {
                           onPress={()=> ''}
                           dateRight
                           location
-                          showItem={["name",'userLocation',"userOccupation"]}
+                          locationProp="userLocation"
+                          showItem={["name","userOccupation"]}
                      />
                  
                       :

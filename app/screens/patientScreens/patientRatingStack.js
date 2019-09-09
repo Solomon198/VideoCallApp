@@ -3,6 +3,8 @@ import PatientRatings from './rate';
 import {AsyncStorage} from 'react-native'
 import { deleteDirectory } from '../../Utils/functions';
 import firebase from 'react-native-firebase'
+import References from '../../Utils/refs'
+import DefaultCustoms from '../../Utils/strings'
 
 const storage = AsyncStorage;
 

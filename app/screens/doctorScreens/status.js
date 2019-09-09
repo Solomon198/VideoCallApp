@@ -5,6 +5,7 @@ import {Switch,AsyncStorage,StyleSheet} from 'react-native'
 import Toolbar from '../../components/Toolbar/Toolbar';
 import { toast } from '../../components/toast';
 import {PUSH_NOTIFICATION_URL_FIREBASE} from 'react-native-dotenv'
+import References from "../../Utils/refs"
 import { Colors } from '../../styles';
 
 const storage = AsyncStorage
@@ -35,7 +36,7 @@ export default class Any extends Component {
             status = status == 'online' ?true:false
             let data = JSON.parse(val);
             this.setState({docKey:data.key,docName:data.name,online:status},()=>{
-                const ref =  firebase.database().ref('/status/'+this.state.docKey);
+                const ref =  firebase.database().ref('/'+References.CateogryEleven+'/'+this.state.docKey);
                 ref.onDisconnect();
                 ref.set({name:this.state.docName,status:'offline'})
             })  
