@@ -1,7 +1,7 @@
 import React,{Component} from 'react'
 import {View,Container,H2,Icon,H3,Header,Right,Left,Body,Title} from 'native-base'
 import * as firebase from 'react-native-firebase';
-import {AsyncStorage,TouchableNativeFeedback,Modal,Image,StyleSheet,PermissionsAndroid} from 'react-native'
+import {AsyncStorage,TouchableNativeFeedback,Modal,Image,StyleSheet,StatusBar} from 'react-native'
 import { StopSound, PlaySoundRepeat } from 'react-native-play-sound';
 import Toolbar from '../../components/Toolbar/Toolbar';
 import type { Notification } from 'react-native-firebase';
@@ -281,6 +281,7 @@ export default class DocDashboard extends Component {
     
     renderCalling(){
       return( <Modal visible={this.state.calling} onRequestClose={()=>''} >
+           <StatusBar backgroundColor="#00aff0"/>
           <View style={styles.callingContainer}>
           <View style={styles.callInfo}>
              <H2 style={styles.header1}>Incoming call</H2>
@@ -394,7 +395,7 @@ export default class DocDashboard extends Component {
                     <View style={styles.container}>
                     
                     {/* <Toolbar title='Appointments'/> */}
-                    <Header style={{backgroundColor:Colors.primary}} androidStatusBarColor={Colors.primary}>
+                    <Header style={{backgroundColor:Colors.primary}} androidStatusBarColor="#00aff0">
                           <Left style={{width:100}}> 
                               
                           </Left>
@@ -468,8 +469,8 @@ const styles = StyleSheet.create({
     flexDirection:'row'
   },
   img:{
-    width:200,
-    height:200,
+    width:150,
+    height:150,
     borderRadius:100,
     alignSelf:'center'
   },
@@ -477,12 +478,14 @@ const styles = StyleSheet.create({
     flex:1
   },
   header2:{
-    fontWeight:'bold',
+    fontWeight:'600',
     fontSize:Typography.buttonFontSize,
-    color:Colors.baseText},
+    padding:5,
+    color:Colors.white},
   headerText:{
     fontSize:Typography.buttonFontSize,
-    color:Colors.baseText
+    color:Colors.white,
+    fontWeight:'400'
   },
   callInfo:{
     flex:1,
@@ -492,7 +495,7 @@ const styles = StyleSheet.create({
   },
   callingContainer:{
     flex:1,
-    backgroundColor:Colors.containers
+    backgroundColor:"#00aff0"
   },
   container:{
     flex:1,

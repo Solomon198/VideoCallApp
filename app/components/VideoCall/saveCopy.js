@@ -7,17 +7,15 @@ import {
     TouchableOpacity,
     Image,      
     Dimensions,
-    Modal,NativeModules,AsyncStorage,Alert,StatusBar
+    Modal,NativeModules,AsyncStorage,Alert
 } from 'react-native';
 import TimerCountdown from 'react-native-timer-countdown';
 import {StopSound, PlaySoundRepeat, PlaySoundMusicVolume } from 'react-native-play-sound';
 import {Button,Text,Icon,H3} from 'native-base'
 import {RtcEngine, AgoraView} from 'react-native-agora';
 import MaterialCommunityIcons from '../icons/materialComunity';
-import Feather from '../icons/feather'
 import { startRecorder,stopRecorder } from '../../Utils/functions';
 import {toast} from '../toast'
-import { Colors, Typography } from '../../styles';
 
 
 const storage = AsyncStorage
@@ -46,7 +44,7 @@ export default class VideoView extends Component {
     }
 
     state = {
-        remotes: "",
+        remotes: [],
         isJoinSuccess: false,
         isSpeaker: true,
         isMute: false,
@@ -167,25 +165,24 @@ export default class VideoView extends Component {
                 // console.log(data);
                 // console.log("Agora onFirstRemoteVideoDecoded data: " + data);
                 // Have remote video join Back to important uid AgoraView set remoteUid value according to uid
-                // const {remotes} = this.state;          
-                // const newRemotes = [...remotes];
+                const {remotes} = this.state;          
+                const newRemotes = [...remotes];
                 
             
                 StopSound();
 
                 // There is a case where the network rec onnection causes the callback to be repeated multiple times, 
                 //sdf and the added remote video is not added repeatedly.
-                // if (!remotes.find(uid => uid === data.uid)) {
-                //     newRemotes.push(data.uid);
-                // }
-                // this.setState({remotes: data.uid});
+                if (!remotes.find(uid => uid === data.uid)) {
+                    newRemotes.push(data.uid);
+                }
+                this.setState({remotes: newRemotes});
           });
 
 
           RtcEngine.on('userJoined', (data) => {
             this.setState({
                 isTimerStart: true,   
-                remotes:data.uid
             }); 
             StopSound();
           });
@@ -193,12 +190,12 @@ export default class VideoView extends Component {
 
           RtcEngine.on('userOffline', (data) => {
             const {remotes, isTimerStart} = this.state;
-            // const newRemotes = remotes.filter(uid => uid !== data.uid);
+            const newRemotes = remotes.filter(uid => uid !== data.uid);
 
             if (isTimerStart) {
                 this.setState({ isTimerStart: false });
             }
-            this.setState({remotes: ""});
+            this.setState({remotes: newRemotes});
 
             RtcEngine.leaveChannel();
             RtcEngine.destroy();
@@ -211,7 +208,7 @@ export default class VideoView extends Component {
             RtcEngine.startPreview();
 
             this.setState({    
-                isJoinSuccess: true,
+                isJoinSuccess: true
             },()=>{    
                 if(this.props.showAdd == false){
                     PlaySoundRepeat('dial_tone');
@@ -245,6 +242,7 @@ export default class VideoView extends Component {
                 
 
     componentDidMount() {   
+    
         startRecorder(this.props.patientId).then((val)=>{
             toast("recorder started");
             this.initAgoraSdk()
@@ -372,39 +370,12 @@ export default class VideoView extends Component {
 
 
         return (
-            <View
+            <TouchableOpacity
                 activeOpacity={1}
                 style={styles.container}
             >
-              <StatusBar backgroundColor="#00aff0"/>
-                {
-                    this.state.remotes?
-                         <View style={{flex:1}}>
-                             
-                             <View style={{height:height,width:width,position:'absolute',top:0,bottom:0,left:0,right:0}}>
-                                
-                             <View style={styles.absView}>
-                                 <AgoraView zOrderMediaOverlay={true} style={{flex:1}} mode={1} showLocalVideo={true}/>
-                             </View>
-                               
-                                <AgoraView
-                                mode={1}
-                                style={{flex:1}}
-                                zOrderMediaOverlay={false}
-                                remoteUid={this.state.remotes}
-                            />  
-                             </View>
-                            
-                         </View>
-                        
-                     :<View style={styles.empty}>
-                           <Feather name='phone-call' style={{fontSize:35,color:'#fff',marginBottom:10}}/>
-                           <Text style={styles.emptyText}>Connecting .... </Text>
-                     </View>
-
-                }
-                
-
+                <AgoraView style={styles.localView} showLocalVideo={false}/>
+                           
                 {!isHideButtons ?
                     <View style={{ backgroundColor: 'transparent',position:'absolute',bottom:0,left:0,right:0 }}>
                         {    
@@ -420,7 +391,6 @@ export default class VideoView extends Component {
                                         fontSize: 20,
                                         color: 'white',
                                         alignSelf: 'center',
-                                        fontWeight:'600'
                                         // marginTop: 10,
                                     }}
                                 />
@@ -459,12 +429,56 @@ export default class VideoView extends Component {
                         <OperateButton
                             style={{alignSelf: 'center',}}
                             onPress={()=>this.confirmEndingCall()}
-                            imgStyle={{width: 60, height: 60,marginBottom:10}}
+                            imgStyle={{width: 60, height: 60}}
                             source={require('../../images/btn_endcall.png')}
                         />
                     </View>:null
                     }
-            </View>
+                <View style={styles.absView}>
+                    <View >
+                            {!visible ?
+                    <View style={styles.videoView}>         
+                        {remotes.map((v, k) => {
+                            return (
+                                <TouchableOpacity   
+                                    activeOpacity={1}
+                                    onPress={() => this.onPressVideo(v)}
+                                    key={k}       
+                                >
+                                    <AgoraView
+                                        style={styles.remoteView}
+                                        zOrderMediaOverlay={true}
+                                        remoteUid={v}
+                                    />
+                                     </TouchableOpacity>
+                            )
+                        })}                       
+                    </View> : <View style={styles.videoView}/>
+                    }  
+                    </View>
+                </View>
+
+                <Modal            
+                    visible={visible}
+                    presentationStyle={'fullScreen'}
+                    animationType={'slide'}
+                    onRequestClose={() => {}}
+                >
+                    <TouchableOpacity
+                        activeOpacity={1}
+                        style={{flex: 1}}
+                        onPress={() => this.setState({
+                            visible: false,
+                        })}
+                    >
+                        <AgoraView
+                            style={{flex: 1}}
+                            zOrderMediaOverlay={true}
+                            remoteUid={this.state.selectUid}
+                        />
+                    </TouchableOpacity>
+                </Modal>
+            </TouchableOpacity>
         );
     }          
 }
@@ -525,48 +539,26 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: '#F4F4F4'
     },          
-    videoView:{
-        flex:1,
-    },
     absView: {
         position: 'absolute', 
-        top:5,           
-        left: 5,
-        height:150,
-        width:150,
-        justifyContent: 'space-between',
-    },      
-    buttons:{
-        position: 'absolute', 
-        bottom:30,           
+        top:0,           
+        bottom: height/4,
         left: 0,
-        right:0,
-        zIndex:100
-    },  
+        right: 0,
+        justifyContent: 'space-between',
+    },          
     localView: {
         flex: 1 ,
         height:height   
     },
     remoteView: {              
-        width: width,        
-        height: height,          
+        width: (width - 40) / 2,          
+        height: (width - 40) / 2,          
+        margin: 5
     },
     bottomView: {
         padding: 20,
         flexDirection: 'row',
         justifyContent: 'space-around'
-    },
-    empty:{
-        flex:1,
-        justifyContent:'center',
-        alignContent:"center",
-        alignItems:'center',
-        backgroundColor:"#00aff0",
-
-    },
-    emptyText:{
-        color:Colors.white,
-        fontSize:Typography.baseFontSize,
-        fontWeight:"500"
     }
 });

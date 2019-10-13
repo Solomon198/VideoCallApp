@@ -4989,10 +4989,10 @@ react-lifecycles-compat@^3, react-lifecycles-compat@^3.0.4:
   resolved "https://registry.yarnpkg.com/react-lifecycles-compat/-/react-lifecycles-compat-3.0.4.tgz#4f1a273afdfc8f3488a8c516bfda78f872352362"
   integrity sha512-fBASbA6LnOU9dOU2eW7aQ8xmYBSXUIWr+UmF9b1efZBazGNO+rcXT/icdKnYm2pTwcRylVUYwW7H1PHfLekVzA==
 
-react-native-agora@2.3.3-alpha.5:
-  version "2.3.3-alpha.5"
-  resolved "https://registry.yarnpkg.com/react-native-agora/-/react-native-agora-2.3.3-alpha.5.tgz#04cdab8084a488dec45ccf0957021f3e28e8f93d"
-  integrity sha512-rSYpYaZhxaXm3LyJMT7FLDtZLxdB/5np5rmbXwERVXoebj9LjEUuMOKb6oEaSkPgPWtcbMyK54Fwk0FbIXSbbA==
+react-native-agora@^2.9.0-alpha.3:
+  version "2.9.0-alpha.3"
+  resolved "https://registry.yarnpkg.com/react-native-agora/-/react-native-agora-2.9.0-alpha.3.tgz#796143bbbdfb755e0169b3c84928eb30c61953fb"
+  integrity sha512-Os/AdlTS2fd4c5PmVCvRnwJ5P4kTkKPQu4AZ14dWsnf12cFEOMtnuSEPTO81/NbDhQrUzQRqHXl4F1rO8v2xyA==
   dependencies:
     tslib "^1.9.3"
 

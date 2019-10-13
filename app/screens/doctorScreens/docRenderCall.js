@@ -1,6 +1,6 @@
 import React,{Component} from 'react'
 import VideoView from '../../components/VideoCall/VideoView'
-import {AsyncStorage,View,BackHandler,BackAndroid,Platform} from 'react-native'
+import {AsyncStorage,View,BackHandler,BackAndroid,StatusBar} from 'react-native'
 import * as firebase from 'react-native-firebase';
 import moment from 'moment'
 import { Colors } from '../../styles';

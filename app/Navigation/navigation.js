@@ -202,7 +202,7 @@ const Auth = createStackNavigator({
 
 const SwitchNav = createSwitchNavigator({
     Auth:Auth,
-    PatientStack:PatientTab,
+    PatientStack:PatientTab,  
     DoctorStack:DoctorTab,
     CallStack:CallStack,
     DocCallStack:DocCallStack,
@@ -213,7 +213,7 @@ const SwitchNav = createSwitchNavigator({
     initialRouteName:'Auth'
 })
     
-const navigationPersistenceKey = __DEV__ ? "Niihygitjil8hjrtjghjhgjhhklkjhuujgkkkuykkg" : 'Navuuoikjhgfghjkjhjhghokkkjukjdkkkkjhfoovu';
+const navigationPersistenceKey = __DEV__ ? "Niihygitjil8hjrtjghdjuujg8ukk988kuykkg" : 'Navuuoikkis987poiujhghokkkjukjdkkkkjhfoovu';
 
 
    
