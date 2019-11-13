@@ -5,7 +5,7 @@ import {ScrollView,StyleSheet,View,DatePickerAndroid,TimePickerAndroid,Modal,Ima
 import Toolbar from '../../components/Toolbar/Toolbar';
 import { toast } from '../../components/toast';
 import { YouTubeStandaloneAndroid } from 'react-native-youtube';
-import {YOUTUBE_DEVELOPER_API_KEY} from 'react-native-dotenv'
+import {YOUTUBE_DEVELOPER_API_KEY,API_PREFIX} from 'react-native-dotenv'
 import { Thumbnail } from 'react-native-thumbnail-video';
 import {Loading} from '../../components/Loader/loader'
 import {Colors, Typography} from '../../styles/index'
@@ -13,6 +13,7 @@ import { AppStatus } from '../../Utils/functions';
 import { Text, Layout ,Button,Radio} from 'react-native-ui-kitten';
 import { ButtonComponent } from 'react-native-ui-kitten/ui/button/button.component';
 import References from '../../Utils/refs'
+import axios from 'axios'
 
 
 const firestore = firebase.firestore();
@@ -28,10 +29,13 @@ export default class SetAppointMent extends Component {
     state = {   
            data :this.props.navigation.state.params,
            visible:false,
-           youtubeIds:this.props.navigation.state.params.youtubeIds,
+           youtubeIds:this.props.navigation.state.params.youtube,
            patName:'',
            userLocation:'',
-           userOccupation:''
+           userOccupation:'',
+           hospitalName:'',
+           error:'',
+           doctorsIds:[]
  
     }   
     
@@ -43,122 +47,133 @@ export default class SetAppointMent extends Component {
         this.setState({visible:false})
     }
     confirmBooking(){
-        let ref = firestore.collection(References.CategorySeven).doc(firebase.auth().currentUser.uid).collection(References.CategoryEighteen).doc(References.CategoryNineteen);
-        const {price} = this.state.data;
-
-        ref.get().then((snapshot)=>{
-                let info =  snapshot.data();
-                if(!info.firstName || !info.lastName || !info.location || !info.occupation ){
-                  return  Alert.alert('',"Please complete your profile info to set appointment")
-                }
-
-                this.setState({patName:info.firstName + ' ' + info.lastName,userOccupation:info.occupation,userLocation:info.location});
-                  
-            if(!snapshot.data())return this.setState({visible:false},()=>{
-                toast('You dont have enough coins to set appointment')
-            });
-
-            let value = snapshot.data().amount?snapshot.data().amount:0
-            if(parseInt(value) >= parseInt(price)){
+   
                 Alert.alert(
                     '',
-                    'You are setting appointment with '+ this.state.data.doctorName + ' confirm or cancel',
+                    'You are setting appointment with '+ this.state.data.name + ' confirm or cancel',
                     [
                       {
                         text: 'Cancel',
                         onPress: () => console.log('Cancel Pressed'),
                         style: 'cancel',
                       },
-                      {text: 'Confirm', onPress: () => {this.appStatus();this.showLoader()}},
+                      {text: 'Confirm', onPress: () => {
+                        let doctorInfo = this._getDoctorInfomation();
+
+                        let doctorId = doctorInfo.uid;
+
+                        let findIds = this.state.doctorsIds.indexOf(doctorId);
+
+                        if(findIds >= 0){
+                            this.setState({error:'Appointment already exist.'});
+                        }else{
+                            this.sendAppointMent();
+                        }
+
+                        
+                      }},
                     ],
                     {cancelable: false},
                   );
-            }else{
-                    this.hideLoader();
-                    toast('Get more coins to set this appointment')
-            }
-        })
+           
     }
+
+    _getDoctorInfomation(){
+        const {name,uid,worth,avatar,bio,occupation,location,hospitalId} = this.state.data;
+        return{name,uid,worth,avatar,bio,occupation,location,hospitalId};
+    }
+
+   async  _getPatientInfomation (){
+        let user_id = firebase.auth().currentUser.uid;
+        const userInfo = await firestore.collection("Users").doc(user_id).get();
+        const {firstName,lastName,occupation,uid,location,avatar} = userInfo.data();
+        let name = firstName + ' ' + lastName;
+
+        return {name,occupation,uid,location,avatar}
+   }
 
 
     //Saving appointment to firebase after collecting neccessary information from user like date and credentials that will be neccessary during call and saving of history
-    sendAppointMent(){
-        const {doctorKey,doctorName,hospitalKey,doctorPhoto,price,location} = this.state.data;
-        let FB = firebase.firestore();
-
-        let appointmentId = doctorKey+"-"+firebase.auth().currentUser.uid;
-
-        let appointments = FB.collection(References.CategoryThree).doc(appointmentId);
-        let hospitalRef = FB.collection(References.CategoryOne).doc(hospitalKey);
-        let doctorRef = FB.collection(References.CategoryTWo).doc(hospitalKey).collection(References.CategoryTwentyOne).doc(doctorKey);
-        
-
+    async sendAppointMent(){
+         
        
         
-        let appointmentData = {
-            patName:this.state.patName,    
-            doctorName:doctorName,
-            channel:doctorKey,
-            userPhoto:firebase.auth().currentUser.photoURL,
-            docId:doctorKey,
-            patId:firebase.auth().currentUser.uid,
-            docPhoto:doctorPhoto,
-            hospitalId:hospitalKey,
-            paid:parseInt(price),
-            userLocation:this.state.userLocation,
-            userOccupation:this.state.userOccupation,
-            date:new Date().getTime(),
-            docLocation:location
-        }   
+        try{
 
+            this.showLoader();
+            let doctorInfo = this._getDoctorInfomation();
+            let patientInfo = await this._getPatientInfomation();
+    
+           
+            let data = {
+                patientName:patientInfo.name,
+                doctorName:doctorInfo.name,
+                channel:doctorInfo.uid,
+                doctorPhoto:doctorInfo.avatar,
+                patientPhoto:patientInfo.avatar,
+                patientId:patientInfo.uid,
+                doctorId:doctorInfo.uid,
+                hospitalId:doctorInfo.hospitalId,
+                worth:doctorInfo.worth,
+                patientLocation:patientInfo.location,
+                date:new Date(),
+                patientOccupation:patientInfo.occupation,
+                doctorLocation:doctorInfo.location,
+                doctorOccupation:doctorInfo.occupation
+           }
 
-        let ref = firestore.collection(References.CategorySeven).doc(firebase.auth().currentUser.uid).collection(References.CategoryEighteen).doc(References.CategoryNineteen);
+            const saveAppointment = await axios.post( API_PREFIX +"Users/addAppointment",data);
 
+            const {message,status} = saveAppointment.data;
 
+            if(status == 'Success'){
+                toast(message);
+                this.hideLoader();
+                this.props.navigation.goBack();
+            }else{
+                toast(message);
+                this.setState({error:message})
+                this.hideLoader();
+                console.log(message)
+            }
+           
+            
+          
+        }catch(e){
+     
+           this.hideLoader()
+           this.setState({error:e.message})
+           console.log(e.message);
+           toast(e.message)
+        }
+   
 
-
-                        ref.get().then((snapshot)=>{
-
-                            let value = snapshot.data().amount?snapshot.data().amount:0                                                    
-                                hospitalRef.get().then((val)=>{
-                                    let queue = val.data().queue;
-                                    let total = queue + 1;
-                                    hospitalRef.update({queue:total})
-                                    
-                                })
-
-                                doctorRef.get().then((val)=>{
-                                    let queue = val.data().queue?val.data().queue:0;
-                                    let total = queue + 1;
-                                    doctorRef.update({queue:total})
-                                    
-                                })
-
-                               
-                               
-                               
-                                let newCoins = parseInt(value) - parseInt(price);
-                                    ref.update({amount:newCoins}).then((val)=>{
-                                        appointments.set(appointmentData).then(()=>{
-                                            firebase.messaging().subscribeToTopic(doctorKey)
-                                            this.props.navigation.goBack()
-                                            this.setState({visible:false},()=>{
-                                           });
-                                        })
-                                })
-                                 
-                            
-                           
-                        })
-
-
+       
     }
 
 
 
-    componentDidMount(){
+    async componentDidMount(){
+      
+         var appointments = await firebase.firestore().collection('Appointments').where('patientId','==',firebase.auth().currentUser.uid).get();
+         
+         let doctorsIds = [];
+
+         appointments.forEach((snapshot)=>{
+              doctorsIds.push(snapshot.data().doctorId)
+         })
+
+        
+         
         //get youtubs urls of doctor passed from data gotten from a specific doctor in an hospital
         // this.setState({youtubeIds:this.state.youtube}); 
+          var hospitalName = await firestore.collection('Category').doc(this.state.data.hospitalId).get();
+
+          var nameHospital = hospitalName.data().name;
+
+
+          this.setState({ hospitalName:nameHospital ,doctorsIds:doctorsIds })
+             
     } 
     
     
@@ -199,38 +214,10 @@ export default class SetAppointMent extends Component {
     }
 
 
-    appStatus(){
-        const {doctorKey} = this.state.data;
-        let FB = firebase.firestore();
-
-        let appointmentId = doctorKey+"-"+firebase.auth().currentUser.uid;
-
-        let appointments = FB.collection(References.CategoryThree).doc(appointmentId);
-         
-        appointments.get().then((valData)=>{
-           if(valData.exists){
-             this.hideLoader();
-             return  toast("You already have a pending appointment with doctor")
-           }else{
-            AppStatus().then((val)=>{
-                if(val){
-                    this.sendAppointMent();
-                }else{
-                   this.hideLoader();
-                   toast('App under maintainance please try again later')
-                }
-            })
-           }
-        })
-
-        
-    }
-
-
    
     
     render(){
-        const {doctorKey,doctorName,hospitalKey,doctorPhoto,price,userName,hospitalName,doctorBio} = this.state.data;
+        const {name,uid,worth,avatar,bio,occupation,location} = this.state.data;
         return(  
           <Container style={styles.container}>
              <ScrollView>
@@ -245,7 +232,8 @@ export default class SetAppointMent extends Component {
                    
                 
                   <View style={styles.profilePic} >
-                   <Image style={styles.imgStyle} source={{uri:doctorPhoto}} >
+
+                   <Image style={styles.imgStyle} source={avatar?{uri:avatar}: require('../../../assets/default.png')}>
                       
                  </Image>
                
@@ -263,30 +251,31 @@ export default class SetAppointMent extends Component {
              
                  <View style={styles.viewContainer}>
                         <Text style={{marginTop:10}} category="h4">
-                            {doctorName}
+                            {name}
                         </Text>
 
                         <Layout style={{width:"100%",flexDirection:'row',marginTop:10}}>
                           <Layout  style={{width:"46%",marginRight:5,backgroundColor:Colors.primary,borderRadius:50,padding:5}}>
-                            <Text style={{fontSize:20,color:Colors.white,textAlign:'center',letterSpacing:1}}>{hospitalName}</Text> 
+                            <Text style={{fontSize:20,color:Colors.white,textAlign:'center',letterSpacing:1}}>{this.state.hospitalName}</Text> 
                           </Layout>
                           <Layout style={{width:"46%",backgroundColor:Colors.primary,borderRadius:50,padding:5}}>
-                             <Text style={{fontSize:20,color:Colors.white,textAlign:'center',letterSpacing:1}}>Therapist</Text>
+                             <Text style={{fontSize:20,color:Colors.white,textAlign:'center',letterSpacing:1}}>{occupation}</Text>
                           </Layout>
                         </Layout>
                        
-                        {doctorBio?
+                        {bio?
                         <View>
-                            <Text style={{marginTop:10}}>{doctorBio} Lorem, ipsum dolor sit amet consectetur adipisicing elit. A, distinctio non! Tempore ad veniam harum, inventore nemo odio voluptate necessitatibus vel itaque, autem sed labore consequuntur recusandae ea tenetur nihil?</Text>
+                            <Text style={{marginTop:10}}>{bio} Lorem, ipsum dolor sit amet consectetur adipisicing elit. A, distinctio non! Tempore ad veniam harum, inventore nemo odio voluptate necessitatibus vel itaque, autem sed labore consequuntur recusandae ea tenetur nihil?</Text>
                         </View>
                     
                         :
                         <Text></Text>
                         }
                  </View>
+                 <Text style={{color:'red',marginLeft:10,marginTop:5,fontWeight:'bold'}}>{this.state.error}</Text>
                  <Layout style={{width:"100%",flexDirection:'row',marginTop:10,marginLeft:10,marginRight:10}}>
                           <Layout style={{width:"30%",marginRight:5,justifyContent:'center',backgroundColor:'#f5f5f5',borderRadius:5}}>
-                            <Text style={{alignSelf:'center',color:Colors.primary}} category="h6">${price+'.00'}</Text>
+                            <Text style={{alignSelf:'center',color:Colors.primary}} category="h6">${worth+'.00'}</Text>
                           </Layout>
                           <Layout style={{width:"66%",marginRight:10}}>
                              <Button style={[{borderColor:Colors.lightGray,borderWidth:2,marginRight:10},styles.shadow]} textStyle={{letterSpacing:2}} onPress={()=>this.confirmBooking()} status="success" >SET APPOINTMENT</Button>

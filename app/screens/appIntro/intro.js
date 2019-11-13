@@ -4,6 +4,7 @@ import {View,StyleSheet,ViewPagerAndroid,ImageBackground,StatusBar,AsyncStorage}
 import {Button,Text,Icon} from 'native-base'
 import SplashScreen from 'react-native-splash-screen'
 import {Colors, Typography} from '../../styles/index'
+import firebase from 'react-native-firebase'
 const storage = AsyncStorage;
 
 export default class AppIntro extends Component {
@@ -24,17 +25,16 @@ export default class AppIntro extends Component {
     }
 
 
-    onFinish(){
-        storage.getItem('userInfo').then((val)=>{
-            let passData = JSON.parse(val);
-            storage.getItem('accountType').then((val)=>{
-                if(val == '1'){
-                    this.props.navigation.navigate('PatientStack',passData);    
-                }else{
-                    this.props.navigation.navigate('DoctorStack',passData)
-                }
-            })
-        })
+   async onFinish(){
+        
+        const uid = firebase.auth().currentUser.uid;
+        const user =  await firebase.firestore().collection('Users').doc(uid).get();
+        if(user.exists){
+            //this guy does not belong to usercateory1
+            this.props.navigation.navigate("PatientStack");
+        }else{
+            this.props.navigation.navigate("DoctorStack");
+        }
     }
 
 

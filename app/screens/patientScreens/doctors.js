@@ -26,32 +26,38 @@ export default class Doctors extends Component {
 
     
 
-    componentDidMount(){  
+   async componentDidMount(){  
 
       //get doctors using hospitals keys.
 
       var database = firebase.firestore();       
- 
-      var db = database.collection(References.CategoryTWo).doc(this.state.data.hospital.key).collection('credentials')
-             
+
+      var db = database.collection("Doctors").where('hospitalId',"==",this.state.data.key);
+
+    
               
       db.onSnapshot((querySnapshot)=>{        
         let docarray = [];     
             querySnapshot.forEach(function(doc) {
                   let info = {
                     name: doc.data().firstName + ' ' + doc.data().lastName,
-                    key: doc.id ,
-                    price:doc.data().price,
+                    uid: doc.id ,
+                    worth:doc.data().worth,
                     youtube:doc.data().youtube?doc.data().youtube:[],
                     bio:doc.data().bio?doc.data().bio:'',
-                    photo:doc.data().photo?doc.data().photo:'',
+                    avatar:doc.data().avatar?doc.data().avatar:'',
                     paused:doc.data().paused,
                     incomplete:false,
                     location:doc.data().location,
-                }      
-                  if(!info.name || info.youtube.length < 1 || !info.bio || !info.photo){
+                    occupation:doc.data().occupation,
+                    hospitalId:doc.data().hospitalId
+                }  
+
+                  if(!info.name || info.youtube.length < 1 || !info.bio || !info.avatar){
                       info.incomplete = true;
                   }
+
+
 
                  if(info.paused || info.incomplete){
                      //do nothing
@@ -61,7 +67,7 @@ export default class Doctors extends Component {
              });                              
         this.setState({                  
             doctors:docarray,
-            noDoctors:docarray.length < 1 ? true:false
+            noDoctors:docarray.length < 1 ? true:false,
         })    
          
         
@@ -70,19 +76,8 @@ export default class Doctors extends Component {
     // ,,,,
     //Navigate to set appointments with user credentials
     nextNavigation(param){
-        let data = {};
-        data["doctorName"] = param.name;
-        data["doctorKey"]  = param.key;
-        data["price"]      = param.price;
-        data["doctorPhoto"] = param.photo;
-        data["doctorBio"] = param.bio;
-        data["youtubeIds"] = param.youtube;
-        data["hospitalKey"] = this.state.data.hospital.key;
-        data["hospitalName"] = this.state.data.hospital.name;
-        data["userName"]  = this.state.data.user.name;    
-        data["location"]    = param.location
 
-        this.props.navigation.navigate('SetAppointMent',data);
+        this.props.navigation.navigate('SetAppointMent',param);
     }
 
 
@@ -108,11 +103,14 @@ export default class Doctors extends Component {
                         <ListWithImage 
                         data = {this.state.doctors}
                         onPress={(item)=> this.nextNavigation(item)}
-                        iconColor={Colors.white}    
+                        iconColor={Colors.darkText}    
                         showItem={["name"]}
                         location
                         locationProp="location"
                         noDoctors={this.state.noDoctors}
+                        textPropertyName={'worth'}
+                        iconRightName="logo-usd"
+                        iconText= 'worth'
                       />
                       :
                       

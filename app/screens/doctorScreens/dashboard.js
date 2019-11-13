@@ -1,5 +1,5 @@
 import React,{Component} from 'react'
-import {View,Container,H2,Icon,H3,Header,Right,Left,Body,Title} from 'native-base'
+import {View,Container,H2,Icon,H3,Header,Right,Left,Body,Spinner} from 'native-base'
 import * as firebase from 'react-native-firebase';
 import {AsyncStorage,TouchableNativeFeedback,Modal,Image,StyleSheet,StatusBar} from 'react-native'
 import { StopSound, PlaySoundRepeat } from 'react-native-play-sound';
@@ -7,7 +7,7 @@ import Toolbar from '../../components/Toolbar/Toolbar';
 import type { Notification } from 'react-native-firebase';
 import {toast} from '../../components/toast'
 import SplashScreen from 'react-native-splash-screen'
-import {PUSH_NOTIFICATION_URL_FIREBASE} from 'react-native-dotenv'
+import {PUSH_NOTIFICATION_URL_FIREBASE,} from 'react-native-dotenv'
 import { ListWithImage } from '../../components/RenderList/ListComponents';
 import { Loading } from '../../components/Loader/loader';
 import { Colors, Typography } from '../../styles';
@@ -15,6 +15,8 @@ import {deleteDirectory, permissionCheck} from '../../Utils/functions'
 import { Toggle,Text } from 'react-native-ui-kitten';
 import References from "../../Utils/refs"
 import DefaultCustoms from '../../Utils/strings'
+import axios from 'axios';
+import { API_PREFIX} from 'react-native-dotenv';
 
 
 
@@ -35,7 +37,9 @@ export default class DocDashboard extends Component {
 
       online:false,
       docName :'',
+      payload:{},
       status:false,
+      connecting:false,
 
 
        appointments:[
@@ -93,30 +97,15 @@ export default class DocDashboard extends Component {
   }
 
     
-    //when doctor is set online it sends notifications to all patient with appointment with doctor
-    broadcastPresence(){
-      storage.getItem('status').then((val)=>{
-        if(val == 'offline')return false;
-        firebase.firestore().collection(References.CateogryEleven).doc(this.state.docKey)
-        .set({name:this.state.doctorName,status:'online'}).then(()=>{
-        })
-        this.sendNotification()
-    })  
-    }
-
-
-
+   
    
     
-    componentDidMount(){     
+  async  componentDidMount(){  
+
         SplashScreen.hide();
-        storage.getItem('user').then((val)=>{
-              let data = JSON.parse(val);
-              this.setState({docKey:data.key,docName:data.name,online:false},()=>{
-    
-              })  
-           
-        })
+        
+        let uid = firebase.auth().currentUser.uid
+       
        
         deleteDirectory().then(()=>'').catch(()=>"")
         permissionCheck().then(()=>{
@@ -125,8 +114,7 @@ export default class DocDashboard extends Component {
           toast("Please accept all permission to enable effective video call")
         })
         messaging.subscribeToTopic('General');
-        this.broadcastPresence();  
-      
+              
         storage.getItem('record').then(val=>{
           if(val){
             //do noting
@@ -134,47 +122,65 @@ export default class DocDashboard extends Component {
             storage.setItem('record',JSON.stringify(true))
           }
         })
-        storage.getItem('user').then((val)=>{
-          storage.getItem('appIntro').then((kk)=>{
-            let data = JSON.parse(val);         
-            this.setState({docKey:data.key,doctorName:data.name,data:data},()=>{
-           
-            });
+          
 
-            const $ref = dataBase.ref(`${References.CategorySixteen}/${data.key}/`);
+            const $ref = firebase.firestore().collection('status').doc(uid);
             
             //call listener 
-            $ref.set({callerName:false,busy:false,added:345,channel:'eee',endCall:false,uid:false}).then((val)=>{
-              $ref.on('value',(snapshot)=>{        
-                if(this.state.initializeApp == false){       
-                  this.setState({initializeApp:true})     
-              }else{
-                  if(snapshot.val().endCall)return this.setState({calling:false,uid:false},()=>StopSound());
-                  if(snapshot.val().callerName == 'false' || snapshot.val().callerName == false)return false;
-                  if(snapshot.val().busy)return false;
-                  this.setState({             
-                    calling:true,                           
-                    isUserFree:false,
-                    callerName:snapshot.val().callerName, 
-                    channel:snapshot.key,       
-                    uid: snapshot.val().uid,
-                    callPhoto:snapshot.val().photo,
-                    occupation:snapshot.val().occupation,
-                    location:snapshot.val().location
+
+              $ref.onSnapshot((snapshot)=>{    
+          
+                  StopSound();
+
+                  if(!snapshot.exists) return false;
+
                   
-                  },()=>PlaySoundRepeat('call_tone'));
-              }
+                  const {status,recieverStatus,payload} = snapshot.data();
+
+
+
+                  if(status== 'online'){
+
+                    this.setState({online:true});
+
+                  }
+
+                  if(status == 'offline'){
+
+                    this.setState({online:false})
+
+                  }
+
+                  if(recieverStatus == "unitiated"){
+                    this.setState({calling:false});
+                    StopSound();
+                  }
+
+                  if(recieverStatus == 'started'){
+                    this.setState({             
+                      calling:true,                           
+                      isUserFree:false,
+                      callerName:payload.patientName, 
+                      channel:payload.channel,       
+                      uid: payload.patientId,
+                      callPhoto:payload.patientPhoto,
+                      occupation:payload.patientOccupation,
+                      location:payload.patientLocation,
+                      payload:payload
+                    
+                    },()=>PlaySoundRepeat('call_tone'));
+                  }
+
+                 
+              
                
               });
-            })         
            
     
-            this.setState({user:data},()=>{
                 var database = firebase.firestore(); 
                 //gets all appointment for doctor   
               
-              
-                let appointments = database.collection(References.CategoryThree).where("docId","==",data.key)
+                let appointments = database.collection(References.CategoryThree).where("doctorId","==",uid)
                       
                      
                     
@@ -185,23 +191,21 @@ export default class DocDashboard extends Component {
                 querySnapshot.forEach((doc)=>{   
                   let docPhoto = doc.data().userPhoto?doc.data().userPhoto:'';
                 docarray.push({
-                    name: doc.data().patName,    
-                    key: doc.id,
-                    channel:doc.data().channel,
-                    date:doc.data().date,
-                    time:doc.data().time,
-                    hospital:doc.data().hospital,
-                    photo:docPhoto,
-                    paid:doc.data().paid,
-                    patId:doc.data().patId,
-                    docId:doc.data().docId,
-                    hospitalId:doc.data().hospitalId,
-                    docPhoto:doc.data().userPhoto,
-                    userPhoto:doc.data().userPhoto,
-                    patName:doc.data().patName,
-                    docName:doc.data().docName,
-                    userLocation:doc.data().userLocation,
-                    userOccupation:doc.data().userOccupation
+                  name: doc.data().patientName,    
+                  key: doc.id,
+                  channel:doc.data().channel,
+                  date:doc.data().date,
+                  paid:doc.data().paid,
+                  patId:doc.data().patientId,
+                  docId:doc.data().doctorId,
+                  hospitalId:doc.data().hospitalId,
+                  avatar:doc.data().patientPhoto,
+                  doctorName:doc.data().doctorName,
+                  patientName:doc.data().patientName,
+                  date:doc.data().date,
+                  userOccupation:doc.data().userOccupation,
+                  location:doc.data().patientLocation
+              
                 })    
               })       
                   this.setState({                  
@@ -213,68 +217,105 @@ export default class DocDashboard extends Component {
                   
               },(err)=>alert('error reading dataBase'),()=>alert('completes'))
                          
-            });
-          })
-        })
 
        
     }   
     
 
     //when user answers call
-    userAnswerCall(){
-      let data = {
-        uid:this.state.uid,//user id
-        channel:this.state.channel,//doctors key from firestore as his id for id and channel
-        showAdd:this.state.showAdd,//either to show add button depending on loged in user
-        doctorName:this.state.doctorName,
-        userName:this.state.callerName,
+  async  userAnswerCall(){
+     this.setState({connecting:true});
+     try{
+       const answerCall = await axios.post(API_PREFIX+'Users/acceptCall',{payload:this.state.payload});
+       const {message,status} = answerCall.data;
+       StopSound();
+       if(status == 'Success'){
+         this.setState({calling:false,connecting:false})
+         toast('call started');
+         this.props.navigation.navigate('DocRenderCall',this.state.payload)
+       }else{
+         this.setState({connecting:false,calling:false})
+         toast(message);
+       }
+     }catch(e){
+       StopSound();
+       this.setState({connecting:false,calling:false})
+       toast(e.message);
+       console.log(e)
+     }
+   
+    }
+    
+    
 
+   async offLine(){    
+      this.setState({settingStatus:true});
+
+      try{
+         const rejectCall = await axios.post(API_PREFIX+'Users/offline',{uid:firebase.auth().currentUser.uid});
+         const {message,status} = rejectCall.data;
+         this.setState({settingStatus:false});
+         if(status == 'Success'){
+           toast('status success');
+         }else{
+           toast(message);
+         }
+      }catch(e){
+        this.setState({settingStatus:false});
+        toast(e.message);
+        console.log(e);
       }
 
-      
-      let wrapData = JSON.stringify(data);
 
-      storage.setItem('videoData',wrapData).then((val)=>{ 
-        this.setState({isUserFree:false,calling:false,showLive:true},()=>
-        {this.props.navigation.navigate('DocCallStack');
-        const $ref = dataBase.ref(`${References.CategorySixteen}/${this.state.docKey}/`);
-        $ref.set({callerName:false,online:true,added:345,channel:'eee',endCall:false,uid:false,busy:true});
-        StopSound()
-      }    
-      )
-      }).catch((err)=>{
-         //
-      })
-     
-      firebase.database().ref('/'+ References.CateogryEleven+'/'+this.state.docKey)
-      .set({name:this.state.docName,status:'busy'});
-      storage.setItem("status",'busy');
-          
-      
-      //set paramaters for page and move to the page.
-    }    
+    }
 
+
+  async  online(){    
+
+      this.setState({settingStatus:true});
+
+      try{
+         const rejectCall = await axios.post(API_PREFIX+'Users/online',{uid:firebase.auth().currentUser.uid});
+         const {message,status} = rejectCall.data;
+         this.setState({settingStatus:false});
+         if(status == 'Success'){
+           toast('status success');
+         }else{
+           toast(message);
+         }
+      }catch(e){
+        this.setState({settingStatus:false});
+        toast(e.message);
+        console.log(e);
+      }
+
+
+    }
+
+    
  
-
-    //when doctor ends call or reject a call
-    endCall(){     
-      this.setState({calling:false,isUserFree:true},()=> StopSound())
-      this.doctorRejectCall();  
-     
-    }    
 
 
     //call rejection logic
-    //method sends signal to the node that patient is listening to with properties telling it call is rejected
-    doctorRejectCall(){    
-      const randomNumber = Math.round(Math.random() * 1000000);
-      dataBase.ref(`${References.CategorySixteen}/${this.state.uid}/`).set({addTime:true,added:randomNumber,callRejected:true}).then((val)=>{
-  
-      }).catch((err)=>this.setState({modal:false}))
-      firebase.database().ref('/'+References.CateogryEleven+'/'+this.state.docKey)
-      .set({name:this.state.docName,status:'online'});
-      storage.setItem("status",'online');
+  async  doctorRejectCall(){    
+      
+      this.setState({calling:false,isUserFree:true,connecting:false},()=> StopSound());
+
+      try{
+         const rejectCall = await axios.post(API_PREFIX+'Users/rejectCall',{uid:this.state.payload.doctorId});
+         const {message,status} = rejectCall.data;
+         if(status == 'Success'){
+           toast('rejection success');
+         }else{
+           toast(message);
+         }
+      }catch(e){
+        this.setState({calling:false,connecting:false})
+        toast(e.message);
+        console.log(e);
+      }
+
+
     }
      
     
@@ -288,30 +329,33 @@ export default class DocDashboard extends Component {
              <H3 style={styles.header2}>{this.state.callerName + ' '}</H3>
              <Text>{this.state.location + ' '}</Text>
              <Text style={styles.header2}>{this.state.occupation + ' '}</Text>
+             {this.state.connecting?<Text style={{fontWeight:'bold',color:'#fff',marginTop:10}}>Connecting please wait....</Text>:null}
           </View>
           <View style={styles.imgContainer}>
           <Image source={{uri:this.state.callPhoto}} style={styles.img}/>
           </View>
-          <View style={styles.callActions}>
+          {this.state.connecting?null:
+              <View style={styles.callActions}>
             
-             <View style={styles.callInfo}>
-              <TouchableNativeFeedback onPress={()=>this.userAnswerCall()}>
-                <View style={styles.actionContainer}>
-                    <Icon name='call' style={styles.answerCallStyle}/>
-                  </View>
-              </TouchableNativeFeedback>     
-             </View>
-              
-             <View style={styles.answerCallContainer}>
-             <TouchableNativeFeedback onPress={()=>this.endCall()}>
-              <View style={styles.actionContainer}>
-                <Icon name='call' style={styles.endCallStyle}/>
-              </View>    
-             </TouchableNativeFeedback>
-                   
-             </View>
-                       
-          </View>
+              <View style={styles.callInfo}>
+               <TouchableNativeFeedback onPress={()=>this.userAnswerCall()}>
+                 <View style={styles.actionContainer}>
+                     <Icon name='call' style={styles.answerCallStyle}/>
+                   </View>
+               </TouchableNativeFeedback>     
+              </View>
+               
+              <View style={styles.answerCallContainer}>
+              <TouchableNativeFeedback onPress={()=>this.doctorRejectCall()}>
+               <View style={styles.actionContainer}>
+                 <Icon name='call' style={styles.endCallStyle}/>
+               </View>    
+              </TouchableNativeFeedback>
+                    
+              </View>
+                        
+           </View>
+          }
         </View>
       </Modal>)
     }  
@@ -341,51 +385,11 @@ export default class DocDashboard extends Component {
       
     //toggle presence of doctor on or off
     togglePresence(){
-        this.setState({online:!this.state.online},()=>{
-            if(this.state.online){
-                    storage.getItem('lastCalled').then((lastCalled)=>{
-                      let nowDate = new Date().getTime();
-                      if(lastCalled){
-                        let lastCalledVal = parseInt(lastCalled)/1000;
-                        let min = ((nowDate/1000) - lastCalledVal)/60;
-                        if(min >= 30){
-                          let ref = firebase.database().ref(`${References.CateogryEleven}/`+this.state.docKey);
-                          let setNewDate = new Date().getTime();
-                          let setNewDateformat = setNewDate + '';
-                          storage.setItem("lastCalled",setNewDateformat);
-                          ref.set({name:this.state.docName,status:'online'}).then(()=>{
-                          })
-                          ref.onDisconnect().set({name:this.state.docName,status:'offline'});
-                         
-                          this.sendNotification()
-                        }else{
-                          let ref = firebase.database().ref(`${References.CateogryEleven}/`+this.state.docKey);
-                          
-                         ref.set({name:this.state.docName,status:'online'}).then(()=>{
-                         })
-                         ref.onDisconnect().set({name:this.state.docName,status:'offline'});
-                           }
-                          }else{
-                          let ref = firebase.database().ref(`${References.CateogryEleven}/`+this.state.docKey);
-                          let setNewDate = new Date().getTime();
-                          let setNewDateformat = setNewDate + '';
-                          storage.setItem("lastCalled",setNewDateformat);
-                          ref.set({name:this.state.docName,status:'online'}).then(()=>{
-                          })
-                          ref.onDisconnect().set({name:this.state.docName,status:'offline'});
-                         
-                          this.sendNotification()
-                          }      
-                    })
-            }else{
-                storage.setItem('status','offline').then(()=>{
-                 firebase.database().ref(`${References.CateogryEleven}/`+this.state.docKey)
-                .set({name:this.state.docName,status:'offline'})
-                })
-                
-            }
-        })
-
+           if(this.state.online){
+              this.offLine();
+           }else{
+             this.online();
+           }
     }
     
     
@@ -403,28 +407,31 @@ export default class DocDashboard extends Component {
                             <Text  style={{textAlign:'center',alignSelf:'center',color:"#fff",marginLeft:30}}>{DefaultCustoms.AppointmentPage}</Text>
                           </Body>
                           <Right style={{width:100}}>
-                            <Toggle
+                             {this.state.settingStatus?<Spinner color='white'/>: <Toggle
                                   checked={this.state.online}
                                   status="success"
                                   onChange={()=>this.togglePresence()}
 
-                                />
+                                />}
                           </Right>
                     </Header>
                     {this.renderCalling()}
                       {this.state.appointments.length > 0?
                        <ListWithImage 
-                          dateRight
+                          state={this.state}
                           data = {this.state.appointments}
-                          onPress={()=> ''}
                           dateRight
                           location
-                          locationProp="userLocation"
-                          showItem={["name","userOccupation"]}
+                          onPress={()=> {}}
+                          locationProp="location"
+                          leftItem
+                          degree = '0deg'
+                          iconColor={Colors.forestgreen}
+                          showItem={["name",]}
                      />
                  
                       :
-                       !this.state.noAppointMents?     
+                       this.state.noAppointMents == false?     
                         <Loading show={true}/>
                       :
                       <Loading show={false} text='No appointments'/>

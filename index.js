@@ -1,4 +1,8 @@
-
+global.Symbol = require('core-js/es6/symbol');
+require('core-js/fn/symbol/iterator');
+require('core-js/fn/map');
+require('core-js/fn/set');
+require('core-js/fn/array/find');
 
 import { AppRegistry,View } from 'react-native';
 import  NavContainer from './app/Navigation/navigation'

@@ -4,13 +4,14 @@ import {AsyncStorage,Modal,StyleSheet,TouchableNativeFeedback} from 'react-nativ
 import * as firebase from 'react-native-firebase';
 import { toast } from '../../components/toast';
 import Geolocation from 'react-native-geolocation-service';
-import { GEOCODING_API_KEY,GOOGLE_GEOLOCATION_URL} from 'react-native-dotenv'
+import { GEOCODING_API_KEY,GOOGLE_GEOLOCATION_URL,API_PREFIX} from 'react-native-dotenv'
 import { Loading } from '../../components/Loader/loader';
 import FontAwsome from '../../components/icons/fontawsome'
 import Octicons from '../../components/icons/octicons'
 import { Colors } from '../../styles';
 import { Text, Layout ,Input,Button} from 'react-native-ui-kitten';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view'
+import axios from 'axios'
 
    
 
@@ -34,7 +35,8 @@ export default class SignUp extends Component {
         latitude:'',
         state:'',
         city:'',
-        gettingLocation:false
+        gettingLocation:false,
+        errorMessage:''
     }   
 
     validation(){
@@ -46,11 +48,6 @@ export default class SignUp extends Component {
           return  toast('Enter an email address')
         } else if(!this.state.password.trim()){ 
            return toast('Enter password')
-        }
-        else if(!this.state.occupation.trim()){
-           return toast('Please enter occupation')
-        }else if(!this.state.city && !this.state.state){
-          return toast('Please set your location to continue');
         }
         else{
             this.signUp()   
@@ -112,37 +109,43 @@ export default class SignUp extends Component {
     }
 
     componentDidMount(){
+        this.setState({visible:false})
         storage.getItem('loca').then((val)=>{
          
         })
     }
 
 
-    signUp(){
-        let auth = firebase.auth();
-        this.setState({visible:true},()=>{
-            auth.createUserWithEmailAndPassword(this.state.email,this.state.password).then((val)=>{
-                let $ref = firebase.firestore().collection('users').doc(val.user.uid).collection('personalInfo').doc('info');
-                 $ref.set({
-                    firstName:this.state.firstName,
-                    lastName:this.state.lastName,
-                    occupation:this.state.occupation,
-                    location: this.state.city + this.state.state
-                  })
-                val.user.sendEmailVerification().then((val)=>{
-                    toast('Verification sent to email address');
-                    this.setState({visible:false})
-                    this.props.navigation.goBack();   
-                }).catch((err)=>{
-                    this.setState({visible:false})
-                    this.props.navigation.goBack();      
-                })
-               
-           }).catch((val)=>{
-               this.setState({visible:false})
-               toast(val.message);
-           })
-        })
+
+  async   signUp(){
+
+        try{
+
+            
+            this.setState({visible:true});
+
+            const signUser = await axios.post(`${API_PREFIX}Users/registerUser`,{email:this.state.email,password:this.state.password,firstName:this.state.firstName,lastName:this.state.lastName})
+           
+            const {status,message,data} = signUser.data;
+
+            this.setState({visible:false})
+
+            if(status == "Success") {
+               this.props.navigation.goBack();
+               return toast('Verification sent to email address verify email and login');
+   
+            }else{
+                this.setState({errorMessage:message})
+                return toast(message)
+            }
+   
+   
+        }catch(e){
+            this.setState({visible:false})
+            toast(e.message);
+            console.log(e)
+        }
+       
        
     }
    
@@ -169,6 +172,7 @@ export default class SignUp extends Component {
 
            <Form style={styles.form}>
            <Text style={{color:Colors.primary,marginBottom:10,marginTop:10}} category="h2">Create account</Text>
+           <Text style={{marginTop:10,marginHorizontal:10,color:'red'}}>{this.state.errorMessage}</Text>
 
                         <View style={styles.inputContainer}>
                         <View  style={styles.inputSubContainer}>

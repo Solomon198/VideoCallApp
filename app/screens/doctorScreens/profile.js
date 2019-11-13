@@ -7,13 +7,15 @@ import Toolbar from '../../components/Toolbar/Toolbar';
 import { toast } from '../../components/toast';
 import Geolocation from 'react-native-geolocation-service';
 import { Text, Layout ,Input,Button} from 'react-native-ui-kitten';
-import { GEOCODING_API_KEY,GOOGLE_GEOLOCATION_URL} from 'react-native-dotenv'
 import { Colors, Typography } from '../../styles';
 import Feather from '../../components/icons/feather'
 import { Thumbnail } from 'react-native-thumbnail-video';
 import { YouTubeStandaloneAndroid } from 'react-native-youtube';
 import {YOUTUBE_DEVELOPER_API_KEY} from 'react-native-dotenv'
 import References from "../../Utils/refs"
+import axios from 'axios'
+import { API_PREFIX} from 'react-native-dotenv'
+
 
 
 
@@ -47,10 +49,86 @@ export default class DocProfile extends Component {
            latitude:'',
            city:'',
            state:'',
+           avatar:'',
            gettingLocation:false,
-           location:''
+           location:'',
+           coins:0,
+           hospitalName:'',
+           youtube:[],
+
+           updateFirstName:'',
+           updatelastName:'',
+           updateOccupation:'',
+           updateLocation:'',
+           updateAvatar:'',
+           updateBio:'',
+           UpdateLink1:'',
+           UpdateLink2:'',
+           UpdateLink3: '',
+
+           hospitalId:'',
+           updateProfile:{
+
+          }
  
     }   
+
+
+    updateAvatar(avatar){
+      let profileInfo = this.state.updateProfile;
+      profileInfo['avatar']  = avatar;
+      this.setState({updateProfile:profileInfo,showModal:false,updateAvatar:avatar});
+    }
+    
+    updateFirstName(firstName){
+      let profileInfo = this.state.updateProfile;
+      profileInfo['firstName']  = firstName;
+      this.setState({updateProfile:profileInfo,updateFirstName:firstName})
+    }
+
+updatelastName(lastName){
+  let profileInfo = this.state.updateProfile;
+  profileInfo['lastName']  = lastName;
+  this.setState({updateProfile:profileInfo,updatelastName:lastName})
+ }
+
+ updateLocation(location){
+  let profileInfo = this.state.updateProfile;
+  profileInfo['location']  = location;
+  this.setState({updateProfile:profileInfo,updateLocation:location})
+ }
+
+ updateOccupation(occupation){
+  let profileInfo = this.state.updateProfile;
+  profileInfo['occupation']  = occupation;
+  this.setState({updateProfile:profileInfo,updateOccupation:occupation})
+}
+
+updateBio(bio){
+  let profileInfo = this.state.updateProfile;
+  profileInfo['bio']  = bio;
+  this.setState({updateProfile:profileInfo,updateBio:bio})
+}
+
+
+
+updateLink(index,link){
+  let urls = this.state.youtube;
+  let profileInfoUpdate = urls;
+
+  if(profileInfoUpdate.length - 1 >= index){
+    profileInfoUpdate[index] = link;
+  }else{
+    profileInfoUpdate.push(link);
+  }
+
+  let updateProfile = this.state.updateProfile;
+  updateProfile['youtube'] = profileInfoUpdate;
+  
+
+  this.setState({updateProfile:updateProfile})
+}
+
 
     //show loader indicator or spinner
     loader(){
@@ -71,30 +149,20 @@ export default class DocProfile extends Component {
     //doc update profile after all parameters have been edited
     updateProfile(path){
         
-        var imageRef = imageStore.ref('profilePictures/'+this.state.data.key);
-        var userRef = firestore.collection(References.CategoryTWo).doc(this.state.data.hospitalKey).
-        collection(References.CategorySeventeen).doc(this.state.data.key);
-  
-        imageRef.putFile(path).then((val)=>{
-            imageRef.getDownloadURL().then((downloadUrl)=>{
-                  this.setState({showModal:false,photo:downloadUrl},()=>{
-                      //set image in database and local storage
-                      userRef.update({photo:downloadUrl}).then(()=>{
-                          let userData = this.state.data;
-                          userData['photo'] = downloadUrl;
-                          let wrap = JSON.stringify(userData);
-                          storage.setItem('user',wrap);
-                      })
-                  })     
-            }).catch((err)=>{
-              this.setState({showModal:false})
-                toast('unable to upload url')
-            })
-        }).catch((err)=>{
-          this.setState({showModal:false})
-            toast('unable to upload url')
-        })
-        
+      const user = firebase.auth().currentUser;
+      var imageRef = imageStore.ref('profilePictures/'+user.uid);
+    
+      imageRef.putFile(path).then((val)=>{
+          imageRef.getDownloadURL().then((downloadUrl)=>{
+            this.updateAvatar(downloadUrl);  
+          }).catch((err)=>{
+            this.setState({showModal:false})
+              toast('unable to upload url')
+          })
+      }).catch((err)=>{
+        this.setState({showModal:false})
+          toast('unable to upload url')
+      })
        
       }
     
@@ -117,37 +185,35 @@ export default class DocProfile extends Component {
           })
     }
 
-    //validate and update doctor other credentials before submitting changes
-    updateProfileInfo(){
-      let links = [];
-      if(!this.state.firstName.trim() || !this.state.lastName.trim() || !this.state.bio.trim()){
-        return toast('Please fill all fields')
-      }
-      this.setState({editing:!this.state.editing});
-      if(this.state.link1.trim()){
-        links.push(this.state.link1)
-      }
-      if(this.state.link2.trim()){
-        links.push(this.state.link2)
-      }
-      if(this.state.link3.trim()){
-        links.push(this.state.link3)
-      }   
-      
-      var $ref = firestore.collection(References.CategoryTWo).doc(this.state.data.hospitalKey).
-      collection(References.CategorySeventeen).doc(this.state.data.key);
 
-         
-         $ref.update({
-          firstName:this.state.firstName,
-          lastName:this.state.lastName,
-          bio:this.state.bio,
-          youtube:links
-        })
-      
-      }
+     //updating profile info when editing
+  async  updateProfileInfo(){
 
+    if(Object.keys(this.state.updateProfile).length == 0) return this.setState({editing:!this.state.editing});
+ 
+    this.setState({showModal:true});
 
+     try{
+          const uid = firebase.auth().currentUser.uid;
+
+          const updateProfile = await axios.post(`${API_PREFIX}Users/updateProfileDoctor`,{uid:uid,payload:this.state.updateProfile})
+        
+          const {status,message} = updateProfile.data;
+    
+          if(status == "Success"){
+              this.setState({showModal:false,updateProfile:{},editing:!this.state.editing});
+          }else{
+              this.setState({showModal:false})
+              toast("unable to update profile");
+          }
+     }catch(e){
+       this.setState({showModal:false})
+       toast(e.message)
+     }
+    
+    }
+
+  
     //toggles editing mode.
     toggleEditing(){
       if(this.state.editing){
@@ -173,36 +239,34 @@ export default class DocProfile extends Component {
 
 
     //get human readable locations from longitude and latitude from gcm gecoding api
-    googleReverseGeo(){
-      var docRef = firestore.collection(References.CategoryTWo).doc(this.state.data.hospitalKey).
-                  collection(References.CategorySeventeen).doc(this.state.data.key);
+ //users google gecoding api to convert longitude and latitude to human readable format
+ async  googleReverseGeo(){
+   
+  this.setState({gettingLocation:true})
+  
+  try{
 
-      fetch(`${GOOGLE_GEOLOCATION_URL} ${this.state.latitude},${this.state.longitude}&key=${GEOCODING_API_KEY}`).then((response)=> response.json()).then((val)=>{
+       const location = await axios.post(API_PREFIX+"services/location",{longitude:this.state.longitude,latitude:this.state.latitude});
+      
+       const {message,status,data} = location.data;
 
-        if(val.results.length < 1){
-          this.setState({gettingLocation:false})
-          return false;
-        };
-          let location = val.results[0].address_components;
-          let state,city;
-          location.forEach((value)=>{
-              if(value.types[0] == 'locality'){
-                 city = value.long_name + ', '
-              }
-              if(value.types[0] == 'administrative_area_level_1'){
-                  state = value.long_name
-               }
-          })
-          
-      this.setState({gettingLocation:false,location:state+" " + city},()=>{
-         docRef.update({
-           location:state + ' ' + city
-         })
-      })
-      }).catch((err)=>{
-          this.setState({gettingLocation:false})
-      })   
-  }
+       this.setState({gettingLocation:false});
+       if(status == "Success"){
+
+          this.updateLocation(data)
+       }else{
+          toast(message)
+       }
+   }catch(e){
+
+      this.setState({gettingLocation:false});
+      console.log(e.message);
+      toast(e.message)
+   }
+    
+  
+    
+}
 
 
   // get current longitude and latitude using geolocation
@@ -233,33 +297,21 @@ export default class DocProfile extends Component {
   }
    
 
-    componentDidMount(){
-            storage.getItem('user').then((val)=>{
-                let data = JSON.parse(val);
-                if(data){
-                    let donationRef = firestore.collection(References.CategoryTen).doc(data.key);
-
-                    donationRef.onSnapshot((snapshot)=>{
-                        if(!snapshot.data())return false;
-                        let value = snapshot.data().totalDonations
-                        if(value){
-                           this.setState({donation:value,showLoader:false})
-                        }    
-                    })
-
-                   
-                }
-                this.setState({data:data,photo:data.photo},()=>{
-                  var $ref = firestore.collection(References.CategoryTWo).doc(this.state.data.hospitalKey).
-                  collection(References.CategorySeventeen).doc(this.state.data.key);
-  
+    async  componentDidMount(){                
+                  
+                  let user = firebase.auth().currentUser.uid;
+               
+                  var $ref = firestore.collection("Doctors").doc(user);
+          
                   $ref.onSnapshot((onSnapshot)=>{
-                    if(!onSnapshot.exists)return false;
 
                     let data;
+
                     let documentID;
+
                     data =   onSnapshot.data();
-                    let value = onSnapshot.data().amount?onSnapshot.data().amount:0
+
+                    let value = onSnapshot.data().coins?onSnapshot.data().coins:0
 
                     documentID = onSnapshot.id
                     let checkUrls = data.youtube?data.youtube:[];
@@ -267,23 +319,39 @@ export default class DocProfile extends Component {
                     let link2 = checkUrls.length > 1 ?data.youtube[1]:'';
                     let link3 = checkUrls.length > 2 ?data.youtube[2]:'';
 
+                   // var hospitalName = await firestore.collection('Category').doc(data.hospitalId).get();
+
+                 //  var nameHospital = hospitalName.data().name;
+
                     this.setState({
+                      youtube:checkUrls,
                       firstName:data.firstName,
                       lastName:data.lastName,
                       location:data.location,
                       documentID:documentID,
-                      photo:data.photo?data.photo:'',
+                      avatar:data.avatar,
                       bio:data.bio?data.bio:'',
                       link1:link1,
                       link2:link2,  
                       link3:link3,
                       showLoader:false,
-                      balance:value
+                      coins:value,
+                      coins: value,
+                      occupation:data.occupation,
+                      updateFirstName:data.firstName,
+                      updatelastName:data.lastName,
+                      updateOccupation:data.occupation,
+                      updateLocation:data.location,
+                      updateAvatar:data.avatar,
+                      updateBio:data.bio,
+                      UpdateLink1:link1,
+                      UpdateLink2:link2,
+                      UpdateLink3: link3,
+                      updateProfile:{},
+                      hospitalId:data.hospitalId
                     })   
                  })
                   
-                });
-            })
     }    
 
 
@@ -322,10 +390,27 @@ export default class DocProfile extends Component {
     toggleDrawer(){
       this.props.navigation.toggleDrawer();
     }
+
+   async getHospitalName(){
+
+        if(!this.state.hospitalName){
+
+          var hospitalName = await firestore.collection('Category').doc(this.state.hospitalId).get();
+
+          var nameHospital = hospitalName.data().name;
+
+
+          this.setState({ hospitalName:nameHospital  })
+
+        }
+    }
     
 
     //tenary operator is used for toggling between edit mode 
     render(){
+        if(this.state.hospitalId){
+           this.getHospitalName();
+        }
         let link1 = this.state.link1?this.getYoutubeVidzId(this.state.link1):'';
         let link2 = this.state.link2?this.getYoutubeVidzId(this.state.link2):'';
         let link3 = this.state.link3?this.getYoutubeVidzId(this.state.link3):'';
@@ -339,9 +424,13 @@ export default class DocProfile extends Component {
               </View>
               <View style={styles.profilePicMainContainer}>
                  <View style={styles.profilePic} >
-                  <Image style={styles.img} source={{uri:this.state.photo}} >
-                     
-                </Image>    
+                 {
+                    this.state.editing?
+                     <Image style={styles.imgStyle} source={this.state.updateAvatar?{uri:this.state.updateAvatar}: require('../../../assets/default.png')}/>
+                            :
+                     <Image style={styles.imgStyle} source={this.state.avatar?{uri:this.state.avatar}: require('../../../assets/default.png')}/>
+
+                  }
                 {
                     this.state.editing?
                     <TouchableHighlight style={styles.cameraStyle} onPress={()=>this.pickProfilePicture()}>
@@ -375,25 +464,27 @@ export default class DocProfile extends Component {
                      <Input 
                      underlineColorAndroid={Colors.lightGray}
                      label="FIRST NAME"
-                     value={this.state.firstName} style={{width:"47%",marginRight:4,backgroundColor:'#fff',borderColor:"#fff"}} placeholderTextColor='#ccc' onChangeText={(text)=>this.setState({firstName:text})} placeholder="First Name" />
+                     value={this.state.updateFirstName} style={{width:"47%",marginRight:4,backgroundColor:'#fff',borderColor:"#fff"}} placeholderTextColor='#ccc' onChangeText={(text)=>this.updateFirstName(text)} placeholder="First Name" />
                      <Input 
                      underlineColorAndroid={Colors.lightGray}
                      label="LAST NAME"
-                     value={this.state.lastName} style={{width:"50%",backgroundColor:'#fff',borderColor:"#fff"}} placeholderTextColor='#ccc'  onChangeText={(text)=>this.setState({lastName:text})} placeholder="Last Name" />
+                     value={this.state.updatelastName} style={{width:"50%",backgroundColor:'#fff',borderColor:"#fff"}} placeholderTextColor='#ccc'  onChangeText={(text)=>this.updatelastName(text)} placeholder="Last Name" />
                    </View>
 
+                   <Input 
+                     underlineColorAndroid={Colors.lightGray}
+                     label="Occupation"
+                     value={this.state.updateOccupation} style={{width:"50%",backgroundColor:'#fff',borderColor:"#fff"}} placeholderTextColor='#ccc'  onChangeText={(text)=>this.updateOccupation(text)} placeholder="occupation" />
+
+
                    
-                   <Textarea value={this.state.bio}  onChangeText={(text)=> this.setState({bio:text})} rowSpan={4} style={styles.textArea} bordered placeholder='biography'/>
-                   <View style={styles.locationEditContainer}>
-                             <Text>
-                             <Text style={styles.greenDot}></Text>
-                             {this.state.city + ' ' + this.state.state}</Text>
-                  </View>
+                   <Textarea value={this.state.updateBio}  onChangeText={(text)=> this.updateBio(text)} rowSpan={4} style={styles.textArea} bordered placeholder='biography'/>
+
 
                   <View style={styles.editLocationStyle}>
-                             { this.state.location ? 
+                             { this.state.updateLocation ? 
                              <View style={styles.greenLocationDot}></View>:<Text></Text>}
-                             <Text style={styles.alignCity}>{this.state.location}</Text>
+                             <Text style={styles.alignCity}>{this.state.updateLocation}</Text>
                      </View>
                   <Button  icon={()=> this.state.gettingLocation?  <Spinner color={Colors.white}/> :<Icon style={{color:Colors.white,fontSize:16}} name='pin'/>  
                     } onPress={()=>this.getLocation()}>                       
@@ -405,11 +496,10 @@ export default class DocProfile extends Component {
                           
                    <H1 style={styles.youtubeHeader}>Youtube link</H1>
                     <Text note style={styles.youtubeHeaderNote}>copy and past youtube video links from youtube</Text>
-                     <Textarea value={this.state.link1} onChangeText={(text)=> this.setState({link1:text},()=>{
-
-                          })} rowSpan={2} style={styles.youtubeHeaderNote} bordered placeholder='Link 1'/>
-                     <Textarea value={this.state.link2} onChangeText={(text)=> this.setState({link2:text})} rowSpan={2} style={styles.youtubeHeaderNote} bordered placeholder='Link 2'/>
-                     <Textarea value={this.state.link3} onChangeText={(text)=> this.setState({link3:text})} rowSpan={2} style={styles.youtubeHeaderNote} bordered placeholder='Link 3'/>
+                     <Textarea value={this.state.UpdateLink1} 
+                     onChangeText={(text)=> this.setState({link1:text},()=>{this.updateLink(0,text) })} rowSpan={2} style={styles.youtubeHeaderNote} bordered placeholder='Link 1'/>
+                    <Textarea value={this.state.UpdateLink2} onChangeText={(text)=> this.setState({link2:text},()=>this.updateLink(1,text))} rowSpan={2} style={styles.youtubeHeaderNote} bordered placeholder='Link 2'/>
+                     <Textarea value={this.state.UpdateLink3} onChangeText={(text)=> this.setState({link3:text},()=>{this.updateLink(2,text)})} rowSpan={2} style={styles.youtubeHeaderNote} bordered placeholder='Link 3'/>
                   </Form>    
                   
 
@@ -437,23 +527,27 @@ export default class DocProfile extends Component {
                        
                         <Layout style={{width:"100%",flexDirection:'row',marginTop:10,marginBottom:10}}>
                           <Layout style={{width:"46%",marginRight:5}}>
-                            <Button textStyle={{fontSize:18,fontWeight:"100",lineHeight:20}} status="success" size="small" style={{borderRadius:50,backgroundColor:Colors.primary,borderColor:Colors.primary}} >Therapist</Button>
+                            <Button textStyle={{fontSize:18,fontWeight:"100",lineHeight:20}} status="success" size="small" style={{borderRadius:50,backgroundColor:Colors.primary,borderColor:Colors.primary}} >{this.state.occupation}</Button>
                           </Layout>
                           <Layout style={{width:"46%"}}>
-                              <Button textStyle={{fontSize:18,fontWeight:"100",lineHeight:20}} status="success" size="small" style={{borderRadius:50,backgroundColor:Colors.primary,borderColor:Colors.primary}}>{this.state.data.hospital}  </Button>
+                              <Button textStyle={{fontSize:18,fontWeight:"100",lineHeight:20}} status="success" size="small" style={{borderRadius:50,backgroundColor:Colors.primary,borderColor:Colors.primary}}>{this.state.hospitalName}  </Button>
                           </Layout>
                         </Layout>
                        
                    
-                    <View style={styles.locationContainer}>
-                             <Icon style={[styles.iconColor,{fontSize:18,marginRight:10}]} name='pin'/>
-                             <Text>
-                             <Text style={styles.locationText}></Text>
-                             {this.state.location}</Text>
-                   </View>
+                   {this.state.location?
+                      <View style={styles.locationContainer}>
+                      <Icon style={[styles.iconColor,{fontSize:18,marginRight:10}]} name='pin'/>
+                      <Text>
+                      <Text style={styles.locationText}></Text>
+                      {this.state.location}</Text>
+                    </View>:null}
                        
-                  <Text><Text style={{fontWeight:"bold"}}>Bio </Text>{this.state.bio}</Text>
 
+                  {
+                    this.state.bio?
+                    <Text><Text style={{fontWeight:"bold"}}>Bio </Text>{this.state.bio}</Text>:null
+                  }
 
 
                   <View style={styles.youtubeContainer}>
@@ -487,7 +581,7 @@ export default class DocProfile extends Component {
              </View>
                         <Layout style={{width:"100%",flexDirection:'row',marginBottom:10,marginTop:-20}}>
                           <Layout style={{width:"30%",marginRight:6,justifyContent:'center',backgroundColor:'#f5f5f5',borderRadius:5}}>
-                            <Text style={{alignSelf:'center',color:Colors.primary,paddingVertical:10,paddingHorizontal:5}} category="h6">${this.state.balance || this.state.balance?this.state.balance + '.00':0+'.00'}</Text>
+                            <Text style={{alignSelf:'center',color:Colors.primary,paddingVertical:10,paddingHorizontal:5}} category="h6">${this.state.coins || this.state.coins?this.state.coins + '.00':0+'.00'}</Text>
                           </Layout>
                           <Layout style={{width:"70%"}}>
                              <Button  status="success" >REDEEM</Button>
@@ -527,6 +621,12 @@ const styles = StyleSheet.create({
     marginBottom:10,
     fontSize:Typography.headerFontSize,
     marginLeft:5,
+  },
+  imgStyle:{
+    width:120,
+    height:120,
+    borderRadius:100,
+    backgroundColor:'white'
   },
   subContainer:{
      flex:1,

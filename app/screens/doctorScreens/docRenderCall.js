@@ -4,7 +4,10 @@ import {AsyncStorage,View,BackHandler,BackAndroid,StatusBar} from 'react-native'
 import * as firebase from 'react-native-firebase';
 import moment from 'moment'
 import { Colors } from '../../styles';
-import References from "../../Utils/refs"
+import References from "../../Utils/refs";
+import axios from 'axios';
+import { API_PREFIX} from 'react-native-dotenv';
+import { toast } from '../../components/toast';
 
 
 const storage = AsyncStorage
@@ -33,15 +36,22 @@ export default class DocRenderCall extends Component{
 
 
   componentDidMount(){
-      storage.getItem('videoData').then((info)=>{
-        let unwrap = JSON.parse(info);
-        const {uid,doctorName,showAdd,channel,userName} = unwrap;
-          this.setState({
-            uid:uid, channel:channel, doctorName:doctorName,showAdd:showAdd,doctorName:doctorName,showVideo:true,docKey:channel,userName:userName
-          },()=>{
+    
+    const $ref = firebase.firestore().collection('status').doc(firebase.auth().currentUser.uid);
+
+    $ref.onSnapshot((snapshot)=>{        
+      
+      if(!snapshot.exists) return false;
+       
+        if(snapshot.data().recieverStatus == 'ongoing'){
+
+            return this.setState({showVideo:true},()=>{
+               StopSound()
+            })
           
-          })
-      })
+          }
+     
+    });
 
   }   
 
@@ -49,27 +59,19 @@ export default class DocRenderCall extends Component{
 
 
   //deletes appointment after call
-  deleteAppointment(){
-   
+  async deleteAppointment(){
+      try{
+         const payload = this.props.navigation.state.params;
+         const _deleteRequest = axios.post(API_PREFIX+'Users/deleteAppointments',{appointmentId:payload.key,payload:payload});
+         const {message,status} = _deleteRequest.data;
+         
+
+      }catch(e){
+        toast(e.message)
+        console.log(e)
+      }
   }
 
-
- 
-
-
-  //when call is finished
-  onCallFinished(callDuration){
-    
-    const $ref = dataBase.ref(`${References.CategorySixteen}/${this.state.channel}/`);
-    $ref.set({callerName:false,busy:false,added:345,channel:'eee',endCall:false,uid:false});
-    let location = firebase.firestore().collection(References.CategorySeven).doc(this.state.channel).collection('history');
-    let historyTime = moment(Date.now()).format('LLLL')
-    location.add({callerName:this.state.userName,duration:this.callDurationCalculator(callDuration),date:historyTime})
-    this.deleteAppointment();
-    firebase.database().ref(`${References.CateogryEleven}/`+this.state.channel)
-           .set({name:this.state.doctorName,status:'online'}).then(()=>{
-     })
-  }   
 
 
   //returns durations in string format as in minutes and seconds or second only if call does not exceed 60seconds
@@ -84,10 +86,57 @@ export default class DocRenderCall extends Component{
         _numberize -= 60
       }
 
-      let _duration = minute+':'+_numberize+ ' seconds';
+      let _duration = minute+':'+_numberize + ' seconds';
       return(_duration);
     }
    }
+
+
+   
+
+   async resetStatus(){
+    try{
+        
+        const setCallHistory = await Axios.post(API_PREFIX+'Users/setDoctorStatus',{uid:firebase.auth().currentUser.uid});
+        const {message,status} = setCallHistory.data;
+        if(status == "Success"){
+          toast('status set')
+        }
+    }catch(e){
+      console.log(e);
+    }
+}
+   
+  //End call could be done by either doctor or user
+  //remember to handle concurrency in api
+  async endCall(duration){
+    try{
+        const _duration = this.callDurationCalculator(duration)
+        const setCallHistory = await Axios.post(API_PREFIX+'Users/callEnded',{payload:this.props.navigation.state.params,duration:_duration});
+        const {message,status} = setCallHistory.data;
+        if(status == "Success"){
+          toast('history sett')
+        }
+    }catch(e){
+      console.log(e);
+    }
+}
+
+
+
+
+//when call is finished set showRating to true and when rating modal is dismissed set to false
+onCallFinished(callDuration){
+
+    if(parseInt(callDuration) > 0 ){
+      this.endCall(callDuration)
+
+      this.props.navigation.navigate('Ratings',this.props.navigation.state.params);
+
+    }else{
+      this.props.navigation.navigate('DoctorStack');
+    }
+}
 
 
   
@@ -95,12 +144,23 @@ export default class DocRenderCall extends Component{
 
 
    //adds patient time of call on call. note whenever a request to add time is made only 1min is added on both side
-   addPatientTime(){
-    const randomNumber = Math.round(Math.random() * 1000000);
-    dataBase.ref(`${References.CategorySixteen}/${this.state.uid}/`).set({addTime:true,added:randomNumber,callRejected:false}).then((val)=>{
+  async addPatientTime(){
+   // add call time
+   try{
 
-    }).catch((err)=>this.setState({modal:false}))
+    const addTime = await Axios.post(API_PREFIX+'Users/addCallTime',{uid:firebase.auth().currentUser.uid});
+    const {message,status} = addTime.data;
+
+    if(status == "Success"){
+      toast('time added')
+    }else{
+      toast("failed to add time")
+    }
+
+}catch(e){
+  console.log(e);
 }
+     }
 
   //handles when call is ended
   handleFinish(duration){
@@ -116,32 +176,37 @@ export default class DocRenderCall extends Component{
   }  
     
  
+//End call could be done by either doctor or user
+  //remember to handle concurrency in api
+  async endCall(duration){
+    try{
 
-  //when call is ended
-  endCall(){   
-    let uid = this.state.uid;
-    const randomNumber = Math.round(Math.random() * 1000000);
-    dataBase.ref(`${References.CategorySixteen}/${uid}/`).set({callerName:this.state.doctorName,added:randomNumber,online:true,addTime:false,endCall:true,uid:false}).then((val)=>{
-      this.setState({channel:uid});
-    }).catch((err)=>this.setState({modal:false}))
-  }
-      
-  render(){
-    if(!this.state.showVideo){
-      return(
-        <View style={{flex:1,backgroundColor:Colors.black}}>
+        const _duration = this.callDurationCalculator(duration)
+        const setCallHistory = await Axios.post(API_PREFIX+'Users/callEnded',{payload:this.props.navigation.state.params.payload,duration:_duration});
+        const {message,status} = setCallHistory.data;
 
-        </View>
-      )
+        if(status == "Success"){
+          toast('history sett')
+        }
+    }catch(e){
+      console.log(e);
     }
+}
+
+  render(){
+    // if(!this.state.showVideo){
+    //   return(
+    //     <View style={{flex:1,backgroundColor:Colors.black}}>
+
+    //     </View>
+    //   )
+    // }
     return(
       <VideoView  
-        channel={this.state.channel}
+        channel={this.props.navigation.state.params.channel}
         onCallFinished={(duration)=>this.onCallFinished(duration)}
-        onCancel={(duration)=>this.handleFinish(duration)}
-        onFinish= {(duration)=>this.handleFinish(duration)}
         addedTime={this.state.addedTime}
-        patientId={this.state.uid}
+        patientId={this.props.navigation.state.params.patientId}
         showAdd = {this.state.showAdd}   
         addPatientTime={()=>this.addPatientTime()}  
         removeAppointment={()=>this.deleteAppointment()} 

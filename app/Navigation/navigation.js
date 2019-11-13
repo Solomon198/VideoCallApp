@@ -72,7 +72,6 @@ const DocCallStack = createStackNavigator({
 
  const FeedBack = createStackNavigator({
     Ratings:Ratings,
-    Charity:Charity,
  },{
     headerMode:'none'
  })
@@ -187,13 +186,12 @@ const DoctorTab = createDrawerNavigator({
 const Auth = createStackNavigator({    
 
      //^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    IndexPage:IndexPage,
-    SignUp:SignUp,
-    Hospitals:Hospitals,
-    RessetPassword:RessetPassword,
     Login:{
         screen:Login
     },
+    SignUp:SignUp,
+    RessetPassword:RessetPassword,
+   
  
 },{    
     headerMode:'none',
@@ -213,7 +211,7 @@ const SwitchNav = createSwitchNavigator({
     initialRouteName:'Auth'
 })
     
-const navigationPersistenceKey = __DEV__ ? "Niihygitjil8hjrtjghdjuujg8ukk988kuykkg" : 'Navuuoikkis987poiujhghokkkjukjdkkkkjhfoovu';
+const navigationPersistenceKey = __DEV__ ? "Niihygitjikllh8hjrtjghdjuujg8ukk9pppplokj88kuykkg" : 'Navjhuluokikkis9;plokj87poiujhghokkkjukjdkkkkjhfoovu';
 
 
    

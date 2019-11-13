@@ -1,5 +1,5 @@
 import React,{Component} from 'react';
-import PatientRatings from './rate';
+import Ratings from '../../components/Rating/rating'
 import {AsyncStorage} from 'react-native'
 import { deleteDirectory } from '../../Utils/functions';
 import firebase from 'react-native-firebase'
@@ -14,23 +14,15 @@ export default class PatientRatingStack extends React.Component{
     }
 
     componentDidMount(){
-        storage.getItem('videoData').then((val)=>{
-            let unwrap = JSON.parse(val);
-            this.setState({...unwrap})
-        })
+        // this.props.navigation.navigate('PatientStack')
     }
 
 
      render(){
          return(
-            <PatientRatings
-                data = {this.state}
-                userId={firebase.auth().currentUser.uid}
-                docId={this.state.docId}
-                dismissModal={()=>this.setState({finishRating:false},()=>{
-                this.props.navigation.navigate("PatientStack")
-                deleteDirectory().then((val)=>'').catch((err)=>"")
-              })}/>
+            <Ratings
+                data = {this.props.navigation.state.params}
+               />
          )
      }
 }

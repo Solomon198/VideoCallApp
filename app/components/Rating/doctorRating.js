@@ -1,7 +1,7 @@
 import React,{Component} from 'react'
-import {Container,Text,Icon,Button,H3,Textarea,Form,Header,Left,Body,Right,Title,Spinner,H1,Modal} from 'native-base'
-import {AsyncStorage,StyleSheet,View,
-    BackHandler,} from 'react-native';
+import {Container,Text,Icon,Button,H3,Textarea,Form,Header,Left,Body,Right,Title,Spinner,H1,Modal,ListItem,} from 'native-base'
+import {AsyncStorage,StyleSheet,View,Slider,
+    BackHandler,FlatList,ScrollView} from 'react-native';
 import { AirbnbRating } from 'react-native-ratings';
 import Toolbar from '../Toolbar/Toolbar';
 import { Colors, Typography } from '../../styles/index';
@@ -10,12 +10,13 @@ import MaterialIcons from '../icons/material';
 import firebase, { Firebase } from 'react-native-firebase'
 import { convertToMp3 } from '../../Utils/functions';
 import References from '../../Utils/refs'
-import NavigationService from '../../Navigation/navigationService'
 import DefaultCus from '../../Utils/strings'
 import axios from 'axios'
 import { API_PREFIX} from 'react-native-dotenv'
+import NavigationService from '../../Navigation/navigationService'
 const fireStore = firebase.firestore();
 var RNFS = require('react-native-fs');
+
 
 const storage = AsyncStorage;
 
@@ -29,16 +30,21 @@ export default class Ratings extends Component {
         rating:0,  
         average:null,
         uploading:0,
-        url:"http://blahblahblah",
+        url:"http:blablabal",
         editable:false,
-        saving:false
+        saving:false,
+        charityId:'',
+        docPercentage:10,
+        charityName:'',
+        charities:[],
+        showCharity:false
     }  
     
      ref   = fireStore.collection(References.CategoryFour);
 
   
 
-   
+  
     
   uploadVidz(file){
       
@@ -51,11 +57,6 @@ export default class Ratings extends Component {
           this.setState({showRating:!this.state.showRating})
       }
 
-
-
-      componentDidMount(){
-
-    }
     
 
 
@@ -101,18 +102,57 @@ export default class Ratings extends Component {
        
     } 
 
+   componentDidMount(){
+    fireStore.collection('Charity').get().then((snapshot)=>{
+        let docarray = [];
+        snapshot.forEach((snap)=>{
+            docarray.push({
+                name:snap.data().name,
+                charityId:snap.id
+            })
+        })
+        this.setState({charities:docarray});
+    })
+         
+    } 
+
+
+
+    charityVIew(){
+        return(
+          <View>
+              <H3 note style={[{marginTop:20,color:Colors.primary,fontWeight:'bold',marginLeft:10}]}>Donate %{this.state.docPercentage}</H3>
+              <Slider 
+                 onSlidingComplete={(value)=> value > 10 ?this.setState({docPercentage:parseInt(value)}):this.setState({docPercentage:10}) }
+                 value={this.state.docPercentage}
+                 maximumValue={100} 
+                 maximumTrackTintColor={Colors.primary}
+                 minimumTrackTintColor={Colors.primary}
+                 minimumValue={0}/>
+
+                <View style={{flexDirection:'row',marginTop:20}}>
+                    <Button onPress={()=>this.setState({showCharity:true})} style={{marginLeft:10,marginVertical:5}} bordered>
+                     <Text>
+                         select charity
+                     </Text>
+                  </Button>
+                  <Text style={{marginTop:20,marginLeft:10}}>{this.state.charityName}</Text>
+                </View>
+          </View>
+        )
+    }
 
     async  saveFeedBack(){
-        if(!this.state.suggesstion.trim() || !this.state.rating) return toast("Please fill all fields")
+        if(!this.state.charityId) return toast("Please select charity to continue");
         try{
             this.setState({saving:true})
-            const saveSuggestionAndRating = await axios.post(API_PREFIX+'transaction/patientFeedBack',{payload:this.props.data,suggestion:this.state.suggesstion,rating:this.state.rating});
+            const saveSuggestionAndRating = await axios.post(API_PREFIX+'transaction/doctorFeedBack',{payload:this.props.data,suggestion:this.state.suggesstion,rating:this.state.rating,charityId:this.state.charityId,docPercentage:this.state.docPercentage});
             this.setState({saving:false})
             const {message,status} = saveSuggestionAndRating.data;
-
             if(status == 'Success'){
-                 NavigationService.navigate("PatientStack")
-    }else{
+                 NavigationService.navigate("DoctorStack")
+            }else{
+                alert(message)
                 toast(message);
             }
 
@@ -124,23 +164,32 @@ export default class Ratings extends Component {
 
     
     async  saveReport(){
+
         if(!this.state.url || !this.state.report.trim())return toast('Please write a problem description')
         try{
             this.setState({saving:true})
-            const saveSuggestionAndRating = await axios.post(API_PREFIX+'transaction/patientReport',{payload:this.props.data,audioUrl:this.state.url,rating:this.state.rating,suggestion:this.state.suggesstion,patientReport:this.state.report});
+            const saveSuggestionAndRating = await axios.post(API_PREFIX+'transaction/doctorReport',{payload:this.props.data,audioUrl:this.state.url,rating:this.state.rating,doctorReport:this.state.report,charityId:this.state.charityId,docPercentage:this.state.docPercentage});
             this.setState({saving:false})
             const {message,status} = saveSuggestionAndRating.data;
             if(status == 'Success'){
-                 NavigationService.navigate("PatientStack")
+                 NavigationService.navigate("DoctorStack")
+
             }else{
-                alert(message)
                 toast(message);
-            }    
+            }  
 
         }catch(e){
             toast(e.message)
             this.setState({saving:false})
         }
+    }
+
+    setCharity(item){
+        this.setState({
+            charityId:item.charityId,
+            charityName:item.name,
+            showCharity:false
+        })
     }
 
 
@@ -182,6 +231,7 @@ export default class Ratings extends Component {
                    </View>:null
                    }
                   <Header style={styles.header} androidStatusBarColor={Colors.primary}>
+
                 <Left>
                     <MaterialIcons name="feedback" style={styles.icon}/>
                 </Left>
@@ -195,17 +245,18 @@ export default class Ratings extends Component {
                     </Button>
                 </Right>
           </Header>
+          {this.charityVIew()}
           <Form style={{flex:1,marginLeft:10,marginRight:10,backgroundColor:Colors.containers}}>
          
          
          
-          <H3 note style={styles.text}>Suggesstion</H3>
-          <Text note>{this.state.suggesstion.length}/500</Text>
+          {/* <H3 note style={styles.text}>Suggesstion</H3> */}
+          {/* <Text note>{this.state.suggesstion.length}/500</Text>
             <Textarea 
                 style={styles.textArea}
                 editable={this.state.saving?false:true}
                 value={this.state.suggesstion} rowSpan={5} onChangeText={(text)=>this.suggesstion(text)} placeholder="..."/>
-          
+           */}
 
           <View style={styles.seperator}></View>
           <Text note style={styles.text}>How was the call quality ? </Text>
@@ -215,13 +266,9 @@ export default class Ratings extends Component {
                 size={50}
                 onFinishRating={(val)=> this.setState({rating:val})}
                 />   
-                
-                {/* <Button disabled={this.state.saving} bordered rounded onPress={()=>this.saveFeedBack()} iconRight  primary block style={styles.btn}>
-                    <Text style={styles.textStyle}>Cancel</Text>
-                    <Icon style={styles.textStyle} name='close-circle' />
-                </Button> */}
-                <Button disabled={this.state.saving} bordered rounded onPress={()=>this.saveFeedBack()} iconRight  primary block style={[{marginTop:40}]}>
-                    <Text style={styles.textStyle}>Submit Feedback</Text>
+
+                <Button disabled={this.state.saving} bordered rounded onPress={()=>this.saveFeedBack()} iconRight  primary block style={{marginTop:40}}>
+                    <Text uppercase={false} style={styles.textStyle}>Send Feedback</Text>
                     <Icon style={styles.textStyle} name='thumbs-up' />
                 </Button>
 
@@ -232,21 +279,22 @@ export default class Ratings extends Component {
         }else{
             return(
                 <View style={{flex:1}}>
-                     {
+                    {
                        this.state.saving?
                        <View style={{flex:1,position:'absolute',top:0,bottom:0,left:0,right:0,justifyContent:'center',zIndex:10,backgroundColor:'rgba(0,0,0,0.5)'}}>
                            <Spinner />
                    </View>:null
-                   }
-                <Header style={styles.header} androidStatusBarColor={Colors.primary}>
+                   }             
+              <Header style={styles.header} androidStatusBarColor={Colors.primary}>
                 <Left>
                     <MaterialIcons name="report" style={styles.icon}/>
                 </Left>
                 <Body>
                   <Title style={styles.title}>Report</Title>
                 </Body>
-               
+                  
           </Header>
+          {this.charityVIew()}
           <Form style={{flex:1,marginLeft:10,marginRight:10,backgroundColor:Colors.containers}}>
          
          
@@ -315,6 +363,46 @@ export default class Ratings extends Component {
         this.setState({suggesstion:text});
     }
     render(){
+
+        if(this.state.showCharity){
+            return(
+                <View style={{flex:1}}>
+                {
+                    this.state.saving?
+                    <View style={{flex:1,position:'absolute',top:0,bottom:0,left:0,right:0,justifyContent:'center',zIndex:10,backgroundColor:'rgba(0,0,0,0.5)'}}>
+                        <Spinner />
+                </View>:null
+                }
+               <Header style={styles.header} androidStatusBarColor={Colors.primary}>
+
+             <Left>
+                 <MaterialIcons name="feedback" style={styles.icon}/>
+             </Left>
+             <Body>
+               <Title style={styles.title}>Feedback</Title>
+             </Body>
+             <Right>
+                 <Button disabled={this.state.saving} onPress={()=>this.toggleScreens()} rounded primary style={{backgroundColor:Colors.primary}}>
+                      <MaterialIcons name="report" style={styles.icon}/>
+                     <Text>Report</Text>
+                 </Button>
+             </Right>
+           </Header>
+           <ScrollView>
+                {
+                    this.state.charities.map((item)=>
+                            <ListItem style={{paddingVertical:5}} onPress={()=>this.setCharity(item)}>
+                            <Body>
+                                <Text style={{fontWeight:'800'}}>{item.name}</Text>
+                            </Body>
+                        </ListItem>
+                    )
+                }
+           </ScrollView>
+          
+           </View>
+            )
+        }
             
         return(          
           <Container style={styles.container}> 

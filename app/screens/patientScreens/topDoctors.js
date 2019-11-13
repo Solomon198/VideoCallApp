@@ -1,7 +1,7 @@
 import React,{Component} from 'react'
 import {Container} from 'native-base'
 import * as firebase from 'react-native-firebase';
-import {AsyncStorage,StyleSheet} from 'react-native';
+import {AsyncStorage,StyleSheet,View} from 'react-native';
 import Toolbar from '../../components/Toolbar/Toolbar'
 import {ListWithImage} from '../../components/RenderList/ListComponents'
 import {Colors} from '../../styles/index'
@@ -126,7 +126,11 @@ export default class TopDoctors extends Component {
 
         if(this.state.noDonation){
             return(
-                <Loading show={false}  text='No Top Doctors' />
+                <View style={{flex:1,backgroundColor:'#fff'}}>
+                                  <Toolbar title={DefaultCustoms.TopDoctors}/>
+                                  <Loading show={false}  text='No Top Doctors' />
+
+                </View>
             )
         }
             

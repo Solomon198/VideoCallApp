@@ -6,7 +6,7 @@ import {toast} from '../../components/toast'
 import Toolbar from '../../components/Toolbar/Toolbar';
 import ImagePicker from 'react-native-image-crop-picker';
 import Geolocation from 'react-native-geolocation-service';
-import { GEOCODING_API_KEY,GOOGLE_GEOLOCATION_URL} from 'react-native-dotenv'
+import { GEOCODING_API_KEY,GOOGLE_GEOLOCATION_URL,API_PREFIX} from 'react-native-dotenv'
 import {Loading} from '../../components/Loader/loader'
 import { Colors, Typography } from '../../styles';
 import FontAwsome from '../../components/icons/fontawsome'
@@ -14,6 +14,7 @@ import Feather from '../../components/icons/feather'
 import { Text, Layout ,Input,Button} from 'react-native-ui-kitten';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view'
 import References from '../../Utils/refs'
+import axios from 'axios'
 
 const firestore = firebase.firestore();
 const imageStore = firebase.storage()
@@ -30,7 +31,7 @@ export default class PatientProfile extends Component {
            data :{},
            visible:false    ,
            showLoader:false,
-           balance:'',
+           coins:'',
            showModal:false,
            photo:'',
            editing:false,
@@ -44,7 +45,17 @@ export default class PatientProfile extends Component {
            state:'',
            gettingLocation:false,
            location:'',
-           bio:''
+           bio:'',
+           avatar:'',
+
+           updateFirstName:'',
+           updatelastName:'',
+           updateOccupation:'',
+           updateLocation:'',
+           updateAvatar:'',
+           updateProfile:{
+
+           }
  
     }       
 
@@ -63,6 +74,37 @@ export default class PatientProfile extends Component {
     }   
 
 
+    updateFirstName(firstName){
+          let profileInfo = this.state.updateProfile;
+          profileInfo['firstName']  = firstName;
+          this.setState({updateProfile:profileInfo,updateFirstName:firstName})
+    }
+
+    updatelastName(lastName){
+      let profileInfo = this.state.updateProfile;
+      profileInfo['lastName']  = lastName;
+      this.setState({updateProfile:profileInfo,updatelastName:lastName})
+     }
+
+     updateLocation(location){
+      let profileInfo = this.state.updateProfile;
+      profileInfo['location']  = location;
+      this.setState({updateProfile:profileInfo,updateLocation:location})
+     }
+
+     updateOccupation(occupation){
+      let profileInfo = this.state.updateProfile;
+      profileInfo['occupation']  = occupation;
+      this.setState({updateProfile:profileInfo,updateOccupation:occupation})
+}
+
+updateAvatar(avatar){
+  let profileInfo = this.state.updateProfile;
+  profileInfo['avatar']  = avatar;
+  this.setState({updateProfile:profileInfo,showModal:false,updateAvatar:avatar});
+}
+
+
 
     //uploads/update  profile picture
     In(path){
@@ -71,14 +113,7 @@ export default class PatientProfile extends Component {
     
       imageRef.putFile(path).then((val)=>{
           imageRef.getDownloadURL().then((downloadUrl)=>{
-            user.updateProfile({
-                displayName:'Default Name',
-                photoURL:downloadUrl 
-            }).then((val)=>{
-                this.setState({showModal:false,photo:path})
-            }).catch((val)=>{      
-                this.setState({showModal:false})
-            })      
+            this.updateAvatar(downloadUrl);  
           }).catch((err)=>{
             this.setState({showModal:false})
               toast('unable to upload url')
@@ -92,34 +127,32 @@ export default class PatientProfile extends Component {
     }
 
     //users google gecoding api to convert longitude and latitude to human readable format
-    googleReverseGeo(){
-      fetch(`${GOOGLE_GEOLOCATION_URL} ${this.state.latitude},${this.state.longitude}&key=${GEOCODING_API_KEY}`).then((response)=> response.json()).then((val)=>
-      {
-      if(val.results.length < 1){
-        this.setState({gettingLocation:false})
-        return false;
-      };
-       
-      let location = val.results[0].address_components;
-          let state,city;
-          location.forEach((value)=>{
-              if(value.types[0] == 'locality'){
-                 city = value.long_name + ', '
-              }
-              if(value.types[0] == 'administrative_area_level_1'){
-                  state = value.long_name
-               }
-          })
-          
-      const user = firebase.auth().currentUser.uid
-      this.setState({gettingLocation:false,state:state,city:city,location:state+" "+city},()=>{
-        firebase.firestore().collection(References.CategorySeven).doc(user).collection(References.CategoryEighteen).doc(References.CategoryNineteen).update({
-          location: state + " " + city
-        })
-      })
-      }).catch((err)=>{
-          this.setState({gettingLocation:false})
-      })   
+  async  googleReverseGeo(){
+   
+    this.setState({gettingLocation:true})
+    
+    try{
+
+         const location = await axios.post(API_PREFIX+"services/location",{longitude:this.state.longitude,latitude:this.state.latitude});
+        
+         const {message,status,data} = location.data;
+
+         this.setState({gettingLocation:false});
+         if(status == "Success"){
+
+            this.updateLocation(data)
+         }else{
+            toast(message)
+         }
+     }catch(e){
+
+        this.setState({gettingLocation:false});
+        console.log(e.message);
+        toast(e.message)
+     }
+      
+    
+      
   }
 
 
@@ -152,19 +185,29 @@ export default class PatientProfile extends Component {
 
 
     //updating profile info when editing
-    updateProfileInfo(){
-      const user = firebase.auth().currentUser;
-      if(!this.state.firstName.trim() || !this.state.lastName.trim() || !this.state.occupation.trim()){
-        return toast('Please fill all fields')
-      }
-      this.setState({editing:!this.state.editing});
-      if(user){
-        firebase.firestore().collection(References.CategorySeven).doc(user.uid).collection(References.CategoryEighteen).doc(References.CategoryNineteen).update({
-          firstName:this.state.firstName,
-          lastName:this.state.lastName,
-          occupation:this.state.occupation,
-        })
-      }
+  async  updateProfileInfo(){
+      if(Object.keys(this.state.updateProfile).length == 0) return this.setState({editing:!this.state.editing});
+   
+      this.setState({showModal:true});
+
+       try{
+            const uid = firebase.auth().currentUser.uid;
+
+            const updateProfile = await axios.post(`${API_PREFIX}Users/updateProfile`,{uid:uid,payload:this.state.updateProfile})
+          
+            const {status,message} = updateProfile.data;
+      
+            if(status == "Success"){
+                this.setState({showModal:false,updateProfile:{},editing:!this.state.editing});
+            }else{
+                this.setState({showModal:false})
+                toast("unable to update profile");
+            }
+       }catch(e){
+         this.setState({showModal:false})
+         toast(e.message)
+       }
+      
       }
     
 
@@ -201,7 +244,7 @@ export default class PatientProfile extends Component {
                 this.setState({data:data,photo:picture},()=>{
 
                         // Get user information from the below references in firebase
-                        let $ref = firestore.collection(References.CategorySeven).doc(firebase.auth().currentUser.uid).collection(References.CategoryEighteen).doc(References.CategoryNineteen);
+                        let $ref = firestore.collection("Users").doc(firebase.auth().currentUser.uid)
 
                         $ref.onSnapshot((onSnapshot)=>{
                            if(!onSnapshot.exists)return false;
@@ -211,12 +254,15 @@ export default class PatientProfile extends Component {
                            data =   onSnapshot.data();
                            documentID = onSnapshot.id
                            this.setState({
+                             updateAvatar:data.avatar,
+                             avatar:data.avatar,
                              firstName:data.firstName,
                              lastName:data.lastName,
                              location:data.location,
+                             updateLocation:data.location,
                              occupation:data.occupation,   
                              documentID:documentID,
-                             balance:!data.amount?0:data.amount,
+                             coins:data.coins,
                            })   
                         })
                 });
@@ -248,7 +294,7 @@ export default class PatientProfile extends Component {
       
     //NOTE tenary operator is used in this render methode to toggle edit features on/off during editing and when editing is canceslled or finished
     render(){
-            
+        
         return(       
           <Container style={styles.container}>
              <ScrollView >
@@ -262,9 +308,15 @@ export default class PatientProfile extends Component {
                  
                 
                   <View style={styles.profilePic} >
-                   <Image style={styles.imgStyle} source={{uri:this.state.photo}} >
+                  {
+                    this.state.editing?
+                     <Image style={styles.imgStyle} source={this.state.updateAvatar?{uri:this.state.updateAvatar}: require('../../../assets/default.png')}/>
+                            :
+                     <Image style={styles.imgStyle} source={this.state.avatar?{uri:this.state.avatar}: require('../../../assets/default.png')}/>
+
+                  }
                       
-                 </Image>
+                
                  {
                     this.state.editing?
                     <TouchableHighlight style={styles.cameraIcon}  onPress={()=>this.pickProfilePicture()}>
@@ -301,22 +353,32 @@ export default class PatientProfile extends Component {
 
                        <Input 
                           
-                         style={styles.input}  underlineColorAndroid={Colors.lightGray} label="FIRST NAME" style={styles.input} value={this.state.firstName} placeholderTextColor='#ccc' onChangeText={(text)=>this.setState({firstName:text})} placeholder="First Name" />
+                         style={styles.input} value={this.state.updateFirstName}  underlineColorAndroid={Colors.lightGray} label="FIRST NAME" style={styles.input}  placeholderTextColor='#ccc' onChangeText={(text)=>this.updateFirstName(text)} placeholder={this.state.firstName} />
                        <Input 
-                        
-                         label="LAST NAME" underlineColorAndroid={Colors.lightGray}   style={styles.input} value={this.state.lastName} placeholderTextColor='#ccc'  onChangeText={(text)=>this.setState({lastName:text})} placeholder="Last Name" />
+                          value={this.state.updatelastName} 
+                         label="LAST NAME" underlineColorAndroid={Colors.lightGray}   style={styles.input} placeholderTextColor='#ccc'  onChangeText={(text)=>this.updatelastName(text)} placeholder={this.state.lastName} />
                      </View>
 
                      <Input 
-                       underlineColorAndroid={Colors.lightGray}   value={this.state.occupation}  label="OCCUPATION" style={{backgroundColor:Colors.white,width:"100%",borderColor:Colors.white}} onChangeText={(text)=> this.setState({occupation:text})}  placeholder='Occupation'/>
+                       value={this.state.updateOccupation} 
+                       underlineColorAndroid={Colors.lightGray}    label="OCCUPATION" style={{backgroundColor:Colors.white,width:"100%",borderColor:Colors.white}} onChangeText={(text)=> this.updateOccupation(text)}  placeholder={this.state.occupation}/>
                    
-                     <Input label="EMAIL" style={{backgroundColor:Colors.white,width:"100%"}} disabled style={{width:"100%"}} value={this.state.data.name} placeholderTextColor='#ccc'  placeholder="EMAIL" />  
 
-                     <View style={styles.editLocationStyle}>
-                             { this.state.location ? 
-                             <View style={styles.greenLocationDot}></View>:<Text></Text>}
-                             <Text style={styles.alignCity}>{this.state.location}</Text>
-                     </View>
+                     {
+                       this.state.editing?
+                          <View style={styles.editLocationStyle}>
+                          { this.state.location ? 
+                          <View style={styles.greenLocationDot}></View>:<Text></Text>}
+                          <Text style={styles.alignCity}>{this.state.updateLocation}</Text>
+                        </View>:
+                         <View style={styles.editLocationStyle}>
+                         { this.state.location ? 
+                         <View style={styles.greenLocationDot}></View>:<Text></Text>}
+                         <Text style={styles.alignCity}>{this.state.location}</Text>
+                 </View>
+                     }
+                   
+                    
                      <Button icon={()=> this.state.gettingLocation?  <Spinner color={Colors.white}/> :<Icon style={{color:Colors.white,fontSize:16}} name='pin'/>  
                     } onPress={()=>this.getLocation()}>                       
                             Set Location
@@ -364,7 +426,7 @@ export default class PatientProfile extends Component {
                    <View style={styles.bottomContainer}>
                   
                   <Layout style={styles.containerAddMoney}>
-                     <Text style={{color:Colors.btnIfo}} category="h4">${this.state.balance || this.state.balance?this.state.balance + '.00':0+'.00'}</Text>
+                     <Text style={{color:Colors.btnIfo}} category="h4">${this.state.coins || this.state.coins?this.state.coins + '.00':0+'.00'}</Text>
                   </Layout>
 
                   <TouchableNativeFeedback onPress={()=>this.props.navigation.navigate('GetCoins')}>
@@ -511,7 +573,8 @@ const styles = StyleSheet.create({
   imgStyle:{
     width:120,
     height:120,
-    borderRadius:100
+    borderRadius:100,
+    backgroundColor:'white'
   },
   picContainer:{
     alignContent:'center',

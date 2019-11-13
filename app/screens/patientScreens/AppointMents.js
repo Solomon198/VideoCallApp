@@ -2,7 +2,7 @@
 
 
 import React,{Component} from 'react'
-import {View,Container} from 'native-base'
+import {View,Container,List,ListItem} from 'native-base'
 import * as firebase from 'react-native-firebase';
 import {AsyncStorage,Modal} from 'react-native'
 import Toolbar from '../../components/Toolbar/Toolbar';
@@ -13,7 +13,8 @@ import {Loading} from '../../components/Loader/loader'
 import { deleteDirectory, permissionCheck, startRecorder, AppStatus } from '../../Utils/functions';
 import References from '../../Utils/refs'
 import DefaultCustoms from '../../Utils/strings'
-
+import axios from 'axios'
+import { API_PREFIX} from 'react-native-dotenv'
 
 
      
@@ -23,7 +24,9 @@ const storage = AsyncStorage;
 
 const dataBase = firebase.database();
 
-export default class AppointMents extends Component {    
+export default class AppointMents extends Component {  
+  
+  
     constructor(props){
         super(props);
 
@@ -39,6 +42,7 @@ export default class AppointMents extends Component {
     item:{},
     user:{},
     callerName:'',
+    connecting:'',
     docKey:'',
     noAppointMents:false,
     showAdd:false,
@@ -55,136 +59,63 @@ export default class AppointMents extends Component {
 
     //This methode is called every time the app is started i.e waked after killed
     //The methode get the status of doctors and listened for any changes afterwards and update the appointment list with the status.
-    getStatus(){
-      const ref = firebase.database().ref(`/${References.CateogryEleven}/`);
-      ref.once('value',(onSnapshot)=>{
-        if(!onSnapshot.exists())return false;
-        let arrayOfSnapshot = [];
-        onSnapshot.forEach((val)=>{
-          arrayOfSnapshot.push({
-            docKey:val.key,
-            status:val.val().status,
-            name:val.val().name
-          }) 
-        })
-        let appointments = this.state.appointments;
-        appointments.forEach((value,index)=>{
-           arrayOfSnapshot.forEach((val)=>{
-             let $docKey = value.key.split('-')[0];
-             if($docKey == val.docKey){
-               value['status'] = val.status;
+    async getStatus(){
+      const ref = firebase.firestore().collection(`status`);
+      let appointments = Object.assign([],this.state.appointments);
 
-             }
-           })
-        })
+      for(let appointment of appointments){
+        const getStatus = await ref.doc(appointment.doctorId).get();
 
-        this.setState({
-          appointments:appointments
-        },()=>{
-          ref.off();
-          ref.on('child_changed',(onsnapshot2)=>{
-            appointments.forEach((_val)=>{
-              let $docKey = _val.key.split('-')[0];
-              if($docKey == onsnapshot2.key){
-                _val["status"] = onsnapshot2.val().status;
-                this.setState({appointments:appointments})
+        appointment.status = getStatus.data().status;
+      }
 
-              }
-            })
-          })
-        })
+      this.setState({appointments:appointments})
+
         
-      })
     }
 
 
   
     //This methode takes a parameter which is the doctor to be called informations and send signal to the doctor if the doctor is online for a call and send info about the user to the doctor.
   
-    triggerCall(item){
-      const user = firebase.auth().currentUser;
-      let videoData = {   
-        photo:user.photoURL,
-        uid:user.uid,
-        channel:item.channel,//doctors key from firestore as his id for id and channel
-        showAdd:false,//either to show add button depending on loged in user
-        doctorName:item.name,
-        userName:this.state.user.name,
-        ...item
-      }
-      let wrapData = JSON.stringify(videoData);
-      const statusRef =  dataBase.ref(`${References.CateogryEleven}/${item.channel}/`);
-    
-     statusRef.once("value",(onSnapshot)=>{
-        if(!onSnapshot.exists()) return  storage.setItem('videoData',wrapData).then((val)=>{
-          return           toast('Doctor is offline') ;
-         
-        }).catch((err)=>{
-          //
-        })
-        let isBusy = onSnapshot.val().status;
-        if(isBusy == 'busy'){
-          toast('Doctor is busy on another call') 
+  async  triggerCall(item){
+       try{
+        this.setState({connecting:item.channel});
+        const startCall = await axios.post( `${API_PREFIX}Users/call`,{payload:item});
+        const {message,status} = startCall.data;
+        if(status == 'Success'){
+          this.props.navigation.navigate("RenderCall",{payload:item,appointmentId:item.key})
+          toast("we can make call now")
+        }else{
+          this.setState({connecting:''})
+          toast(message);
         }
-        else if(isBusy == 'offline'){
-          toast('Doctor is offline ') 
-        }
-        else{
-          storage.setItem('videoData',wrapData).then((val)=>{
-          }).catch((err)=>{
-            //
-          })
- 
-          
-          this.startCall(item)    
-        }
-      })
+       }catch(e){
+          toast(e.message);
+          this.setState({connecting:''})
+       }
     }   
     
 
-    //This send the signals to the doctor with some info about the user it is invoked by the triggercall methode
-    startCall(item){
-        const user = firebase.auth().currentUser;
-        const userName = this.state.firstName + ' ' + this.state.lastName;
-        const randomNumber = Math.round(Math.random() * 1000000);   
-        dataBase.ref(`${References.CategorySixteen}/${item.channel}/`).set({callerName:userName,added:randomNumber,online:true,addTime:false,endCall:false,uid:user.uid,photo:user.photoURL,occupation:this.state.occupation,location:this.state.location}).then((val)=>{    
-          this.setState({showLive:true,channel:item.channel,item:item,callerName:userName,docKey:item.channel});
-          this.props.navigation.navigate('CallStack');
-          storage.setItem("docId",item.channel);
-        }).catch((err)=>this.setState({modal:false}))
-    }
+   
 
        
     componentDidMount(){
         var database = firebase.firestore();   
-
-        storage.getItem('user').then((val)=>{
-            let data = JSON.parse(val);
-            this.setState({user:data},()=>{
-               
               
-                //getting user name
-                let $ref = database.collection(References.CategorySeven).doc(firebase.auth().currentUser.uid).collection(References.CategoryEighteen).doc(References.CategoryNineteen);
-
-                $ref.onSnapshot((onSnapshot)=>{
-                   if(!onSnapshot.exists)return false;
-
-                   let data;
-                   data =   onSnapshot.data();
-                   this.setState({
-                     firstName:data.firstName,
-                     lastName:data.lastName,
-                     location:data.location,
-                     occupation:data.occupation, 
-                   })   
+                const ref = firebase.firestore().collection(`status`);
+                ref.onSnapshot((snapshot)=>{
+                     this.getStatus()
                 })
+
+
 
                 //getting appointments from firebase and listnening for changes
                 let uid = firebase.auth().currentUser.uid;
-                       
-                let appointments = database.collection(References.CategoryThree).where("patId","==",uid)
 
-              appointments.onSnapshot((querySnapshot)=>{                    
+                let appointments = database.collection(References.CategoryThree).where("patientId","==",uid)
+              appointments.onSnapshot((querySnapshot)=>{            
+        
                   let docarray = [];    
                       querySnapshot.forEach((doc)=>{   
                            let docPhoto = doc.data().docPhoto?doc.data().docPhoto:'';
@@ -193,20 +124,21 @@ export default class AppointMents extends Component {
                                 key: doc.id,
                                 channel:doc.data().channel,
                                 date:doc.data().date,
-                                time:doc.data().time,
-                                hospital:doc.data().hospital,
-                                photo:docPhoto,
-                                paid:doc.data().paid,
-                                patId:doc.data().patId,
-                                docId:doc.data().docId,
+                                worth:doc.data().worth,
                                 hospitalId:doc.data().hospitalId,
-                                docPhoto:doc.data().docPhoto,
-                                userPhoto:doc.data().userPhoto,
-                                patName:doc.data().patName,
-                                docName:doc.data().docName,
-                                date:doc.data().date,
-                                docLocation:doc.data().docLocation,
-                                userOccupation:doc.data().userOccupation
+                                avatar:doc.data().doctorPhoto,
+                                doctorName:doc.data().doctorName,
+                                patientId:doc.data().patientId,
+                                doctorId:doc.data().doctorId,
+                                patientName:doc.data().patientName,
+                                doctorOccupation:doc.data().doctorOccupation,
+                                patientOccupation:doc.data().patientOccupation,
+                                location:doc.data().doctorLocation,
+                                doctorPhoto:doc.data().doctorPhoto,
+                                patientPhoto:doc.data().patientPhoto,
+                                patientLocation:doc.data().patientLocation,
+                                doctorLocation:doc.data().doctorLocation,
+                                status:'offline'
                             
 
 
@@ -217,22 +149,19 @@ export default class AppointMents extends Component {
                   this.setState({                  
                       appointments:docarray,
                       noAppointMents:docarray.length > 0?false:true,
-                      uid:data.uid,
-                      userName:data.name,
+                     
 
                   },()=>{
                     this.getStatus();
                   })
                    
-                     
+                        
               },(err)=>alert('error reading dataBase'),()=>alert('completes'))
   
-            });   
 
 
         
        
-        })       
 
        
     }    
@@ -284,22 +213,27 @@ export default class AppointMents extends Component {
                           
                       {  //tenary operator that checks for empty list of appointments
                         this.state.appointments.length > 0?
+
                         <ListWithImage 
                            state={this.state}
                            data = {this.state.appointments}
-                           onPress={(item)=> this.checkPermission(item)}
+                           onPress={(item)=> this.triggerCall(item)}
                            status = {true}
                            dateRight
+                           connecting={this.state.connecting}
                           //  this.getColorForPresence(item)
                            location
+                           locationProp="location"
+                           iconRightName='logo-whatsapp'
                            getBgColor={(item)=> this.getColorForPresence(item)}
                            leftItem
-                           locationProp="docLocation"
-                           degree = '270deg'
+                           degree = '0deg'
                            iconColor={Colors.forestgreen}
                            showItem={["name",]}
                          />
-                     
+                       
+
+
                        : 
                        
                        !this.state.noAppointMents?     

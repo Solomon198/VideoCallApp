@@ -9,7 +9,9 @@ import { Colors, Typography } from '../../styles';
 import { AppStatus } from '../../Utils/functions';
 import { Text, Layout ,Input,Button} from 'react-native-ui-kitten';
 import References from '../../Utils/refs'
+import { GEOCODING_API_KEY,GOOGLE_GEOLOCATION_URL,API_PREFIX} from 'react-native-dotenv'
 import DefaultCustoms from '../../Utils/strings';
+import axios from 'axios'
 
 
 const firestore = firebase.firestore();
@@ -66,49 +68,33 @@ export default class GetCoins extends Component {
     }
 
   
-    //Adding requested coins to the user balance
-    setCoinsNumber(){
-       if(!this.state.coin) return this.setState({show:false},()=>toast('please enter an amount'))
-       storage.getItem('user').then((val)=>{
-           if(val){
-               let data = JSON.parse(val);
-               let ref = firestore.collection(References.CategorySeven).doc(firebase.auth().currentUser.uid).collection('personalInfo').doc('info');
-               ref.get().then((snapshot)=>{
-                   let value = snapshot.data()?snapshot.data().amount:'';
-                   if(value){
-                       let amount = parseInt(this.state.coin) + parseInt(value);
-                       
-                       ref.update({amount:amount}).then(()=>{
-                        this.setState({
-                            show:false
-                        },()=>{
-                            this.goback()
-                        })
-                       }).catch((err)=>{
-                        this.setState({
-                            show:false
-                        },()=>{
-                            toast('Error getting coins')
-                        })
-                       })
-                   }else{
-                       ref.update({amount:this.state.coin}).then(()=>{
-                        this.setState({
-                            show:false
-                        },()=>{
-                            this.goback()   
-                        })
-                       }).catch((err)=>{
-                        this.setState({
-                            show:false
-                        },()=>{
-                            toast('Error getting coins')
-                        })
-                       })
-                   }
-               })
-           }
-       })
+  
+      //updating profile info when editing
+  async  setCoinsNumber(){
+
+    if(!this.state.coin) return this.setState({show:false},()=>toast('please enter an amount'))
+ 
+    this.setState({show:true});
+
+     try{
+          const uid = firebase.auth().currentUser.uid;
+
+          const updateProfile = await axios.post(`${API_PREFIX}Users/creditUser`,{uid:uid,amount:this.state.coin})
+        
+          const {status,message} = updateProfile.data;
+    
+          if(status == "Success"){
+              this.props.navigation.goBack();
+              this.setState({show:false,updateProfile:{}});
+          }else{
+              this.setState({show:false})
+              toast(message);
+          }
+     }catch(e){
+       this.setState({show:false})
+       toast(e.message)
+     }
+    
     }
 
    
@@ -132,17 +118,7 @@ export default class GetCoins extends Component {
                         style={styles.input}
                         underlineColorAndroid='transparent'
                         />
-                        <Button size="large" onPress={()=>this.setState({show:true},()=>{
-                             AppStatus().then((val)=>{
-                                if(val){
-                                    this.setCoinsNumber()
-                                }else{
-                                   this.setState({show:false},()=>{
-                                    toast('App under maintainance please try again later')
-                                   })
-                                }
-                            })
-                        })} 
+                        <Button size="large" onPress={()=> this.setCoinsNumber()} 
                         style={{width:"100%",margin:10}}
                         icon={()=><Icon style={{color:Colors.white}} name='checkmark'/>} status="success">
                             

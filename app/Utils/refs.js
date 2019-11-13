@@ -8,7 +8,7 @@ const $REFS = {
     CategoryFour:"Rating",  
     CategoryFive: "Suggestions", 
     CategorySix : "charities", 
-    CategorySeven: "users", 
+    CategorySeven: "users",   
     CategoryEight: "userRating", 
     CategoryNine: "AppState", 
     CategoryTen:"donation", 

@@ -15,9 +15,10 @@ import {Button,Text,Icon,H3} from 'native-base'
 import {RtcEngine, AgoraView} from 'react-native-agora';
 import MaterialCommunityIcons from '../icons/materialComunity';
 import Feather from '../icons/feather'
-import { startRecorder,stopRecorder } from '../../Utils/functions';
+import { startRecorder,stopRecorder ,deleteDirectory} from '../../Utils/functions';
 import {toast} from '../toast'
 import { Colors, Typography } from '../../styles';
+import firebase from 'react-native-firebase';
 
 
 const storage = AsyncStorage
@@ -52,7 +53,7 @@ export default class VideoView extends Component {
         isMute: false,
         isCameraTorch: false,
         disableVideo: true,
-        isHideButtons: false,
+        isHideButtons: true,
         visible: false,
         selectUid: undefined,
         isTimerStart: false,
@@ -146,7 +147,7 @@ export default class VideoView extends Component {
             // console.log("Agora version: " + version);
         });
 
-        // RtcEngine.disableVideo()
+        // RtcEngine.disableVideo()d
         // RtcEngine.enableAudio();
         RtcEngine.enableVideo();
           
@@ -178,14 +179,15 @@ export default class VideoView extends Component {
                 // if (!remotes.find(uid => uid === data.uid)) {
                 //     newRemotes.push(data.uid);
                 // }
-                // this.setState({remotes: data.uid});
+                this.setState({remotes: data.uid,isHideButtons:false});
           });
 
 
           RtcEngine.on('userJoined', (data) => {
             this.setState({
                 isTimerStart: true,   
-                remotes:data.uid
+                remotes:data.uid,
+                isHideButtons:false
             }); 
             StopSound();
           });
@@ -244,16 +246,17 @@ export default class VideoView extends Component {
 
                 
 
-    componentDidMount() {   
-        startRecorder(this.props.patientId).then((val)=>{
-            toast("recorder started");
-            this.initAgoraSdk()
-          }).catch((err)=>{
-            this.initAgoraSdk()
-            toast("Error starting recorder")
-          })
-   
+  async  componentDidMount() {   
+        const uid = firebase.auth().currentUser.uid;
        
+        this.initAgoraSdk()
+        // startRecorder(uid).then((val)=>{
+        //     toast("recorder started");
+            
+        //   }).catch((err)=>{
+        //     this.initAgoraSdk()
+        //     toast("Error starting recorder")
+        //   })
     }
 
     componentWillUnmount() {
@@ -278,20 +281,11 @@ export default class VideoView extends Component {
     }
 
     handlerCancel = () => {
-        this.props.removeAppointment(this.duration);
-        //this handler stops the destroy the session when time is up
-        // console.log("TTT Agora Stop TIMER: " + new Date().toLocaleString());
-        // this.stop()
-        StopSound()
-        this.stopRecording();
-        RtcEngine.leaveChannel();
-        RtcEngine.removeAllListeners();
-        RtcEngine.destroy();
-
-
-        const {onCancel, onFinish} = this.props;  
-        // onCancel(this.duration);
-        onFinish(this.duration);
+         this.props.onCallFinished(this.duration);
+        // //this handler stops the destroy the session when time is up
+        // // console.log("TTT Agora Stop TIMER: " + new Date().toLocaleString());
+        // // this.stop()
+        // StopSound()
      };            
 
 
@@ -405,7 +399,7 @@ export default class VideoView extends Component {
                 }
                 
 
-                {!isHideButtons ?
+                { isHideButtons == false ?
                     <View style={{ backgroundColor: 'transparent',position:'absolute',bottom:0,left:0,right:0 }}>
                         {    
                             isTimerStart       
@@ -437,7 +431,7 @@ export default class VideoView extends Component {
                                 <AddTimeForDoctorButton
                                 onPress={()=>this.addTime()}
                             />
-                            :<Text></Text>
+                            :null
 
                              }
 

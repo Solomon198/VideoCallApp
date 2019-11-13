@@ -20,57 +20,51 @@ export default class Login extends Component {
     }
 
     state = {
-       accountType:this.props.navigation.state.params.accountType,
-       data:this.props.navigation.state.params.hospital,
        name:'',
        password:'',
        doctors:[],
        visible:false,
-       secureTextEntry:true
+       secureTextEntry:true,
+       errorMessage:''
 
     }   
 
     //handles patient login process when validation has been made on input fields
-    loginPatient(userInfo){
+  async  login(){
         //validate user
-    
-            
-            this.setState({visible:true},()=>{
-                firebase.auth().signInWithEmailAndPassword(this.state.name,this.state.password).then((val)=>{
-                   let user = firebase.auth().currentUser
-                        if(user){
-                            if(user.emailVerified){
-                                this.setState({visible:false})
-                                storage.getItem('appIntro').then((val)=>{  
-                                    if(!val){
-                                        this.props.navigation.navigate('IntroNav');
-                                            let info = JSON.stringify({user:userInfo});
-                                            storage.setItem('userInfo',info).then(()=>{
-                                                storage.setItem('accountType','1');
-                                            })                                
-                                    }else{
-                                        this.props.navigation.navigate('PatientStack',{user:userInfo});    
-                                    }
-                                })
-                            }else{
-                                user.sendEmailVerification().then(()=>{
-                                    this.setState({visible:false},()=>{
-                                        toast('A verification email has been sent to your email address please confirm your email to login')
-                                    })
 
-                                }).catch((err)=>{
-                                    this.setState({visible:false},()=>{
-                                    toast('Verification message already sent please verify your account')
-                                })
-                            })
-                            }
+        try{
+            if(!this.state.name.trim() || !this.state.password.trim())return alert('Please enter email and password')
+            const loginUser = await firebase.auth().signInWithEmailAndPassword(this.state.name,this.state.password);
+             this.setState({visible:true});
+             if(loginUser.user.emailVerified){
+                this.setState({visible:false})
+                const appIntro = await  storage.getItem('appIntro');
+                    if(!appIntro){
+                        this.props.navigation.navigate('IntroNav',{uid:loginUser.user.uid});  
+                    }else{
+                        const user =  await firebase.firestore().collection('Users').doc(loginUser.user.uid).get();
+                        if(user.exists){
+                            //this guy does not belong to usercateory1
+                            this.props.navigation.navigate("PatientStack");
+                        }else{
+                            this.props.navigation.navigate("DoctorStack");
                         }
-                    
-                }).catch((val)=>{
-                   this.setState({visible:false})
-                   alert(val.message)    
-               })
-            })
+                    }
+             }else{
+
+                 const sendVerification = await loginUser.user.sendEmailVerification();
+                 this.setState({visible:false,errorMessage:"A verification email has been sent to your email address please confirm your email to login"})
+              
+             }
+
+        }catch(e){
+             this.setState({visible:false,errorMessage:e.message});
+
+        }
+
+
+           
            
 
     }
@@ -80,6 +74,7 @@ export default class Login extends Component {
         return(
             <Modal 
                 transparent 
+                presentationStyle="overFullScreen"
                 visible={this.state.visible}
             >
               <Loading show={true}/>
@@ -106,30 +101,7 @@ export default class Login extends Component {
         storage.setItem('user',wrap);
     }
           
-    //handles doctor login process when validation has been made on input fields
-    doctorLogin(){
-        const {doctors} = this.state;
-        if( doctors.length > 0){
-              doctors.forEach((val,index)=>{
-                if(this.state.name.toLowerCase() == val.name.toLowerCase() && this.state.password == val.pswd){
-                    storage.getItem('appIntro').then((val)=>{
-                        if(!val){
-                            this.props.navigation.navigate('IntroNav');
-                                let info = JSON.stringify(val);
-                                storage.setItem('userInfo',info).then(()=>{
-                                    storage.setItem('accountType','2');
-                                })
-                        }else{
-                            this.props.navigation.navigate('DoctorStack',val)
-                        }
-                    })
-                    this.saveInfo(val);
-                }
-            })
-        }
-    }
-
-
+   
     //get doctors records base on hospital
     getRecords(){  
         if(this.state.accountType == 'doctor'){
@@ -185,98 +157,11 @@ export default class Login extends Component {
     }    
 
 
-    //display doctor form base on accountype
-    _doctorForm(){
-        return(
-            <Form style={styles.form}>
 
-               <Input 
-               placeholderTextColor={Colors.placeHolderColor} 
-               style={styles.inputStyle} 
-               value={this.state.name}
-               underlineColorAndroid={Colors.lightGray}
-               onChangeText={(text)=>this.setState({name:text})} 
-               placeholder="USERNAME" 
-               clearButtonMode="never"
-               onSubmitEditing={(e)=>e.preventDefault()}
-               icon={()=>
-                <Feather style={[styles.textColor,{fontSize:23}]} name="mail"/>  }           
-                />
-
-               
-              <Input 
-                  clearButtonMode="never"
-                  value={this.state.password}
-                  placeholderTextColor={Colors.placeHolderColor} 
-                  style={styles.inputStyle} 
-                  underlineColorAndroid={Colors.lightGray}
-                  secureTextEntry={this.state.secureTextEntry} 
-                  icon={()=><TouchableNativeFeedback onPress={()=>this.setState({secureTextEntry:!this.state.secureTextEntry})}>
-                  <Feather style={[styles.textColor,{fontSize:23}]} name={this.state.secureTextEntry?'eye-off':'eye'}/>
-               </TouchableNativeFeedback>}
-                  onChangeText={(text)=>this.setState({password:text})} placeholder="PASSWORD" />
-        
-               </Form>    
-        )
-    }
-
-
-    //checks accountype to determine which account to login into
-    login(info){
-        if(this.state.accountType == 'patient'){
-            this.loginPatient(info);
-            this.saveInfo();
-        }else{
-            this.doctorLogin()
-        }
-    }
-
-   //display patient form base on accountype
-
-    _clientForm(){
-        return(
-          <Form style={styles.form}>
-           
-            <Input 
-               placeholderTextColor={Colors.placeHolderColor} 
-               style={styles.inputStyle} 
-               value={this.state.name}
-               onChangeText={(text)=>this.setState({name:text})} 
-               placeholder="EMAIL" 
-               underlineColorAndroid={Colors.lightGray}
-               clearButtonMode="never"
-               onSubmitEditing={(e)=>e.preventDefault()}
-               icon={()=>
-               <Feather style={[styles.textColor,{fontSize:23}]} name="mail"/>  }           
-               />
-
-          
-
-              <Input 
-                  clearButtonMode="never"
-                  underlineColorAndroid={Colors.lightGray}
-                  value={this.state.password}
-                  placeholderTextColor={Colors.placeHolderColor} 
-                  style={styles.inputStyle} 
-                  secureTextEntry={this.state.secureTextEntry} 
-                  icon={()=><TouchableHighlight style={{backgroundColor:'#fff'}} onPress={()=>this.setState({secureTextEntry:!this.state.secureTextEntry})}>
-                  <Feather style={[styles.textColor,{fontSize:23}]} name={this.state.secureTextEntry?'eye-off':'eye'}/>
-               </TouchableHighlight>}
-                  onChangeText={(text)=>this.setState({password:text})} placeholder="PASSWORD" />
-         
-         </Form>    
-        )
-    }
     
 
-    //renders correct form base on accountype
-    renderForm(){
-        if(this.state.accountType == 'patient'){
-            return(this._clientForm())
-        }
-        return this._doctorForm()
-    }
 
+   
 
     
     render(){
@@ -284,11 +169,42 @@ export default class Login extends Component {
         return(      
           <KeyboardAwareScrollView>
           <Container style={styles.container}>
+          {this.loader()}   
+
            <Container style={styles.subContainer}>
                 <StatusBar backgroundColor={Colors.primary} />
                 <Text style={{color:Colors.primary,marginBottom:10}} category="h1">Login to  your account</Text>
-                {this.renderForm()}    
-                {this.loader()}   
+                <Text style={{marginTop:10,marginHorizontal:10,color:'red'}}>{this.state.errorMessage}</Text>
+                <Form style={styles.form}>
+           
+           <Input 
+              placeholderTextColor={Colors.placeHolderColor} 
+              style={styles.inputStyle} 
+              value={this.state.name}
+              onChangeText={(text)=>this.setState({name:text})} 
+              placeholder="EMAIL" 
+              underlineColorAndroid={Colors.lightGray}
+              clearButtonMode="never"
+              onSubmitEditing={(e)=>e.preventDefault()}
+              icon={()=>
+              <Feather style={[styles.textColor,{fontSize:23}]} name="mail"/>  }           
+              />
+
+         
+
+             <Input 
+                 clearButtonMode="never"
+                 underlineColorAndroid={Colors.lightGray}
+                 value={this.state.password}
+                 placeholderTextColor={Colors.placeHolderColor} 
+                 style={styles.inputStyle} 
+                 secureTextEntry={this.state.secureTextEntry} 
+                 icon={()=><TouchableHighlight style={{backgroundColor:'#fff'}} onPress={()=>this.setState({secureTextEntry:!this.state.secureTextEntry})}>
+                 <Feather style={[styles.textColor,{fontSize:23}]} name={this.state.secureTextEntry?'eye-off':'eye'}/>
+              </TouchableHighlight>}
+                 onChangeText={(text)=>this.setState({password:text})} placeholder="PASSWORD" />
+        
+        </Form>    
                 
                 <Button 
                    status="danger" 
@@ -301,15 +217,14 @@ export default class Login extends Component {
                 <Button
                    size="large" status="success" 
                    style={{width:200,borderRadius:50,alignSelf:'center',marginTop:10}}
-                   onPress={()=>this.login({username:this.state.name,password:this.state.password,accountType:this.state.accountType})}>
+                   onPress={()=>this.login()}>
                    Login
                 </Button>    
 
-         {this.state.accountType == 'patient'?
               <Button style={{marginTop:10}} size="large" appearance="ghost" status="primary" onPress={()=>this.props.navigation.navigate('SignUp')} >
                  Create an account
-             </Button> :<Text></Text>
-          } 
+             </Button> 
+          
           </Container>
          <Text style={styles.terms}>By continuing, i accept the terms of <Text style={styles.link}>services,</Text> <Text style={styles.link}>community guidelines</Text> and i have read the <Text style={styles.link}>Privacy policy</Text></Text>
          </Container>
@@ -341,10 +256,9 @@ const styles = StyleSheet.create({
         backgroundColor:Colors.btnColor
     },
     subContainer:{
-        flex:1,
+        flex:1,  
         marginLeft:20,  
         marginRight:20,
-        marginTop:10,
         justifyContent:'center',
         alignContent:'center'
     },

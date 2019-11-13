@@ -1,7 +1,7 @@
 import React,{Component} from 'react'
 import {Container,Button,Text} from 'native-base'
 import * as firebase from 'react-native-firebase';
-import {AsyncStorage} from 'react-native'
+import {AsyncStorage,View} from 'react-native'
 import Toolbar from '../../components/Toolbar/Toolbar';
 import SplashScreen from 'react-native-splash-screen'
 import {Colors} from '../../styles/index'
@@ -36,7 +36,8 @@ export default class PatientDashBoard extends Component {
         showLive:false,
         isUserFree:true,
         calling:false,
-        path:''
+        path:'',
+        fetched:false
        
 
     } 
@@ -123,7 +124,8 @@ export default class PatientDashBoard extends Component {
        
     componentDidMount(){
       
-      
+      // this.props.navigation.navigate('PatientRatingStack',{id:'kdkdkkk'})
+
 
       this.notificationListener()   
      
@@ -132,33 +134,11 @@ export default class PatientDashBoard extends Component {
 
       messaging.subscribeToTopic('General');
 
-        //listens to change in auth state
-        firebase.auth().onAuthStateChanged((user)=>{
-            if (user) {
-              // User is signed in.
-              storage.getItem('user').then((val)=>{
-                let data = JSON.parse(val);
-                data['uid'] = user.uid;
-                data['photo'] = user.photoURL
-            
-                this.setState({user:data,channel:data.key},()=>{
-                  let jsfy = JSON.stringify(data);
-                  storage.setItem('user',jsfy);
-                });   
-            })      
-            } else {    
-                storage.getItem('user').then((val)=>{
-                    let data = JSON.parse(val);   
-                    this.setState({user:data});
-                })  
-              // No user is signed in.
-            }
-            
-          });        
+           
 
-        var database = firebase.firestore();    
+      var database = firebase.firestore();    
  
-      var db = database.collection(References.CategoryOne)
+      var db = database.collection("Category")
              
            
           
@@ -168,12 +148,14 @@ export default class PatientDashBoard extends Component {
                 
                   docarray.push({
                       name: doc.data().name,
+                      avatar:doc.data().avatar,
                       key: doc.id
                   })    
              });                      
         
         this.setState({                  
-            hospitals:docarray
+            hospitals:docarray,
+            fetched:true
         })
          
         
@@ -186,7 +168,7 @@ export default class PatientDashBoard extends Component {
     
     //Navigate to doctor stack on an hospital
     nextNavigation(param){
-        this.props.navigation.navigate('Doctors',{hospital:param,user:this.state.user})
+        this.props.navigation.navigate('Doctors',{key:param.key})
     }
 
   
@@ -210,11 +192,17 @@ export default class PatientDashBoard extends Component {
                                 data = {this.state.hospitals}
                                 onPress={(item)=>this.nextNavigation(item)}
                                 iconLeftName='medical'
+                                showRight={true}
                                 iconColor={Colors.iconColor}
                                 showItem ={['name']}
                               />      
                         
                         :
+                         this.state.fetched && this.state.hospitals.length == 0?
+                          <View style={{flex:1,justifyContent:'center',alignContent:'center',alignItems:'center'}}>
+                                <Text>Content Unavailable</Text>
+                          </View>
+                          :
                               <Loading show={true}/>
                       }
 

@@ -1,9 +1,9 @@
 import React from 'react'
 import {FlatList,TouchableOpacity,StyleSheet,View,Image} from 'react-native'
-import {Card,ListItem,Left,Body,Icon,Right} from 'native-base';
+import {Card,ListItem,Left,Body,Icon,Right,Text,Spinner} from 'native-base';
 import {Colors, Typography} from '../../styles/index'
 import moment from 'moment'
-import { Text, Avatar ,Input,Button} from 'react-native-ui-kitten';
+import { Avatar ,Input,Button} from 'react-native-ui-kitten';
 
 
 export const ListWithIcon = (Prop)=>  (<FlatList
@@ -57,20 +57,23 @@ export const ListWithImage =  (Prop)=>  (<FlatList
     data={Prop.data}
     style={{backgroundColor:Colors.white}}
     renderItem={({item})=>
-             <Card style={styles.ListWithIconCardStyle}>
+             <Card style={styles.ListWithIconCardStyle}>   
+
              <ListItem
                onPress={()=>Prop.onPress(item)}
-               noBorder style={[{backgroundColor:Colors.primary}]}>
+               noBorder >
                    <Left style={[styles.ListWithIconLeftStyle,{maxWidth:50,width:50,marginRight:10}]}>
                           {/* <View style={styles.ListWithImage}> */}
                                       { 
                                         //tenary operator that checks for docPhoto while rendering flatlist changes
-                                         item.photo?
+                                         item.avatar?
                                         //   <Image source={{uri:item.photo}} style={styles.imgRounded}/>
-                                          <Avatar  source={{uri: item.photo}} size="giant" />
+                                          <Avatar  source={{uri: item.avatar}} size="giant" />
                                         :
-                                         <View></View>
-                                      }
+
+                                        <Avatar style={{borderColor:Colors.lightGray,borderWidth:1}} shape="circle" source={require('../../../assets/default.png')}  />
+
+                                          }
        
                                       
                                       {
@@ -83,7 +86,7 @@ export const ListWithImage =  (Prop)=>  (<FlatList
                           {/* </View> */}
                    </Left>
                    <Body>
-                        <TouchableOpacity style={{paddingLeft:10}} onPress={()=>Prop.onPress(item)}>
+                        <TouchableOpacity style={{paddingLeft:2}} onPress={()=>Prop.onPress(item)}>
                            {
                                Prop.showItem.map((val)=>
                 
@@ -96,6 +99,11 @@ export const ListWithImage =  (Prop)=>  (<FlatList
                                )
                            }   
                          </TouchableOpacity>
+                         
+                         { item.date?
+                         <Text note style={{fontSize:Typography.smallestFontSize,marginVertical:2}}>{item.date?moment(item.date).endOf('day').fromNow():''}</Text>
+                         :<View style={{marginTop:10}}/>}
+
 
                          {
                              Prop.location?
@@ -111,7 +119,7 @@ export const ListWithImage =  (Prop)=>  (<FlatList
                         
                         
                         <Right style={[styles.ListWithIconRightStyle,{width:200}]}>   
-                        {
+                        {/* {
                                          Prop.dateRight?
                                            //nested tenary operator checks if date comes with yymmdd format seperately from db or together and pass to moment
                                            !Prop.format?
@@ -130,15 +138,22 @@ export const ListWithImage =  (Prop)=>  (<FlatList
                                           :
                                          <Text></Text>
                                      } 
+                           { */}
                            {
+                            !Prop.showRight?
                              Prop.iconRightName && Prop.iconText ?
                               <View style={styles.rightStyle}>
                                 <Icon style={{color:Prop.iconColor,transform:Prop.degree?[{rotate:Prop.degree}]:[{rotate:"0deg"}]}} name={Prop.iconRightName}/>
                                 <Text style={styles.ListWithIconRightText} uppercase={false}>{item[Prop.textPropertyName]}</Text>
                              </View>
                                :
-                               <Icon style={{color:Prop.iconColor,transform:Prop.degree?[{rotate:Prop.degree}]:[{rotate:"0deg"}]}} name={Prop.iconRightName}/>
-                           }
+                                item.channel == Prop.connecting?
+                                <Spinner color={Colors.lightGray}/>
+                                :
+                                <Icon style={{fontSize:24,color:Prop.iconColor,transform:Prop.degree?[{rotate:Prop.degree}]:[{rotate:"0deg"}]}} name={Prop.iconRightName}/>
+                                :null
+
+                            }
                            
                         </Right>   
                     }
@@ -151,7 +166,6 @@ export const ListWithImage =  (Prop)=>  (<FlatList
 
 const styles = StyleSheet.create({
     ListWithIconCardStyle:{
-        backgroundColor:Colors.primary,
         marginBottom:-3,
         borderRadius:5,
         paddingTop: 5,
@@ -183,7 +197,6 @@ const styles = StyleSheet.create({
     },
     ListWithIconRightText:{
         fontWeight:'bold',
-        color:Colors.white,
         ...Typography.fonts
     },
     fonts:{
@@ -216,9 +229,9 @@ const styles = StyleSheet.create({
 
     headerText:{
         ...Typography.fonts,
-        fontWeight:'100',
-        color:Colors.white,
-        fontSize:Typography.baseFontSize
+        fontWeight:'600',
+        color:Colors.darkGray,
+        fontSize:Typography.headerFontSize
     },
     text:{
         color:Colors.white,
