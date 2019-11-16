@@ -128,7 +128,7 @@ export default class TopDoctors extends Component {
             return(
                 <View style={{flex:1,backgroundColor:'#fff'}}>
                                   <Toolbar title={DefaultCustoms.TopDoctors}/>
-                                  <Loading show={false}  text='No Top Doctors' />
+                                  <Loading show={false}  text={DefaultCustoms.NoTopDoctors} />
 
                 </View>
             )

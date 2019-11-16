@@ -55,7 +55,7 @@ export default class Ratings extends Component {
 
       componentDidMount(){
 
-    }
+    } 
     
 
 

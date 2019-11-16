@@ -146,9 +146,10 @@ onCallFinished(callDuration){
    //adds patient time of call on call. note whenever a request to add time is made only 1min is added on both side
   async addPatientTime(){
    // add call time
+
    try{
 
-    const addTime = await Axios.post(API_PREFIX+'Users/addCallTime',{uid:firebase.auth().currentUser.uid});
+    const addTime = await axios.post(API_PREFIX+'Users/addCallTime',{uid:firebase.auth().currentUser.uid});
     const {message,status} = addTime.data;
 
     if(status == "Success"){

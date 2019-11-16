@@ -65,26 +65,29 @@ export default class RenderCall extends Component{
               $ref.onSnapshot((snapshot)=>{        
                 
                 if(!snapshot.exists) return false;
+
                    
                   //call listener
                   if(snapshot.data().callerStatus == 'rejected'){
-                    return this.setState({showVideo:false},()=>{
+                    this.setState({showVideo:false},()=>{
                       this.onCallFinished(0);
                       StopSound()
                     })
                     
-                  }
+                  }    
 
                   if(snapshot.data().callerStatus == 'ongoing'){
-                    return this.setState({showVideo:true,callStarted:true},()=>{
+                     this.setState({showVideo:true,callStarted:true},()=>{
                       StopSound()
                     })
                     
                   }
 
-                  if(snapshot.data().addedTime > 0) this.setState({addedTime:1000*60},()=>{
-                    
-                  })  
+                  if(snapshot.data().addedTime > 0){
+                      this.setState({addedTime:1000*60},()=>{
+                           
+                      })  
+                  }
                       
                
               });

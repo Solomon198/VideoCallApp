@@ -434,7 +434,7 @@ export default class DocDashboard extends Component {
                        this.state.noAppointMents == false?     
                         <Loading show={true}/>
                       :
-                      <Loading show={false} text='No appointments'/>
+                      <Loading show={false} text={DefaultCustoms.NoAppointments}/>
                       }
                     </View>
           </Container>        

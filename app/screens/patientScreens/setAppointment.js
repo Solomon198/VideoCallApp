@@ -13,6 +13,7 @@ import { AppStatus } from '../../Utils/functions';
 import { Text, Layout ,Button,Radio} from 'react-native-ui-kitten';
 import { ButtonComponent } from 'react-native-ui-kitten/ui/button/button.component';
 import References from '../../Utils/refs'
+import DefaultCustoms from '../../Utils/strings'
 import axios from 'axios'
 
 
@@ -278,7 +279,7 @@ export default class SetAppointMent extends Component {
                             <Text style={{alignSelf:'center',color:Colors.primary}} category="h6">${worth+'.00'}</Text>
                           </Layout>
                           <Layout style={{width:"66%",marginRight:10}}>
-                             <Button style={[{borderColor:Colors.lightGray,borderWidth:2,marginRight:10},styles.shadow]} textStyle={{letterSpacing:2}} onPress={()=>this.confirmBooking()} status="success" >SET APPOINTMENT</Button>
+                             <Button style={[{borderColor:Colors.lightGray,borderWidth:2,marginRight:10},styles.shadow]} textStyle={{letterSpacing:2}} onPress={()=>this.confirmBooking()} status="success" >{DefaultCustoms.setAppointment}</Button>
                           </Layout>
                         </Layout>
 

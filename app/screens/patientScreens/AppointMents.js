@@ -233,13 +233,13 @@ export default class AppointMents extends Component {
                          />
                        
 
-
+ 
                        : 
                        
                        !this.state.noAppointMents?     
                         <Loading show={true}/>
                       :
-                       <Loading text='No appointment' show={false}/>
+                       <Loading text='' show={false}/>
                       }
                      
                   </View>
