@@ -14,6 +14,7 @@ import { deleteDirectory, permissionCheck, startRecorder, AppStatus } from '../.
 import References from '../../Utils/refs'
 import DefaultCustoms from '../../Utils/strings'
 import axios from 'axios'
+import TimerCountdown from "react-native-countdown-component";
 import { API_PREFIX} from 'react-native-dotenv'
 
 
@@ -125,6 +126,7 @@ export default class AppointMents extends Component {
                                 channel:doc.data().channel,
                                 date:doc.data().date,
                                 worth:doc.data().worth,
+                                transactionId:doc.data().transactionId,
                                 hospitalId:doc.data().hospitalId,
                                 avatar:doc.data().doctorPhoto,
                                 doctorName:doc.data().doctorName,
@@ -199,7 +201,7 @@ export default class AppointMents extends Component {
       })
       })
     }
-
+ 
     
     
 
@@ -207,9 +209,10 @@ export default class AppointMents extends Component {
     render(){
          return(             
           <Container style={{backgroundColor:Colors.containers}}>    
+          
                   <View style={{flex:1,backgroundColor:Colors.containers}}>
                      <Toolbar title={DefaultCustoms.AppointmentPage}/>             
-
+                     
                           
                       {  //tenary operator that checks for empty list of appointments
                         this.state.appointments.length > 0?

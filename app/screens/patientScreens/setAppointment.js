@@ -221,6 +221,7 @@ export default class SetAppointMent extends Component {
         const {name,uid,worth,avatar,bio,occupation,location} = this.state.data;
         return(  
           <Container style={styles.container}>
+             
              <ScrollView>
               {this.loader()} 
              

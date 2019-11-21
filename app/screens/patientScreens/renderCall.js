@@ -84,7 +84,7 @@ export default class RenderCall extends Component{
                   }
 
                   if(snapshot.data().addedTime > 0){
-                      this.setState({addedTime:1000*60},()=>{
+                      this.setState({addedTime:60},()=>{
                            
                       })  
                   }

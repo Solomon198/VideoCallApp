@@ -14,7 +14,7 @@ export default class PatientRatingStack extends React.Component{
     }
 
     componentDidMount(){
-       // this.props.navigation.navigate('PatientStack')
+       //this.props.navigation.navigate('PatientStack')
     }
 
 

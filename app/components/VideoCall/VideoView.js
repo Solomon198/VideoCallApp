@@ -9,7 +9,7 @@ import {
     Dimensions,
     Modal,NativeModules,AsyncStorage,Alert,StatusBar
 } from 'react-native';
-import TimerCountdown from 'react-native-timer-countdown';
+import TimerCountdown from "react-native-countdown-component";
 import {StopSound, PlaySoundRepeat, PlaySoundMusicVolume } from 'react-native-play-sound';
 import {Button,Text,Icon,H3} from 'native-base'
 import {RtcEngine, AgoraView} from 'react-native-agora';
@@ -63,7 +63,7 @@ export default class VideoView extends Component {
         start:false
     };
 
-    secondsRemaining = 1000*180;
+    secondsRemaining = 60 * 3;
     duration = 0;
 
 
@@ -269,8 +269,8 @@ export default class VideoView extends Component {
             
 
     addTime(){
-        this.secondsRemaining = this.secondsRemaining + (60*1000)
-        this.setState({timerTime:(1000 * 60)+this.secondsRemaining},()=>{//not useful but just for reRendering purpose to update the timer with the latest seconds  
+        this.secondsRemaining = this.secondsRemaining + (60)
+        this.setState({timerTime:(60)+this.secondsRemaining},()=>{//not useful but just for reRendering purpose to update the timer with the latest seconds  
             this.props.addPatientTime();
         })
     }    
@@ -405,18 +405,13 @@ export default class VideoView extends Component {
                             isTimerStart       
                             ? (
                                 <TimerCountdown
-                                    initialSecondsRemaining={this.secondsRemaining}
-                                    onTick={(secondsRemaining)=> {this.secondsRemaining = secondsRemaining;
-                                      this.duration += 1}}
-                                    onTimeElapsed={()=> this.onTimerElapsed()}
-                                    allowFontScaling={true}
-                                    style={{
-                                        fontSize: 20,
-                                        color: 'white',
-                                        alignSelf: 'center',
-                                        fontWeight:'600'
-                                        // marginTop: 10,
-                                    }}
+                                
+                                    until={this.secondsRemaining}
+                                    onFinish={()=> this.onTimerElapsed()}
+                                    digitStyle={{backgroundColor: 'transparent'}}
+                                    digitTxtStyle={{color: '#fff'}}
+                                    onChange={()=> this.duration = this.duration+1}
+                                    timeToShow={['M', 'S']}
                                 />
                             ) : null     
                         }   

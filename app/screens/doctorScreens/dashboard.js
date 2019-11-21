@@ -197,6 +197,7 @@ export default class DocDashboard extends Component {
                   date:doc.data().date,
                   paid:doc.data().paid,
                   patId:doc.data().patientId,
+                  transactionId:doc.data().transactionId,
                   docId:doc.data().doctorId,
                   hospitalId:doc.data().hospitalId,
                   avatar:doc.data().patientPhoto,
