@@ -1,9 +1,9 @@
 rootProject.name = 'videoCall'
-include ':react-native-audio-transcoder'
-project(':react-native-audio-transcoder').projectDir = new File(rootProject.projectDir, '../node_modules/react-native-audio-transcoder/android')
+// include ':react-native-audio-transcoder'
+// project(':react-native-audio-transcoder').projectDir = new File(rootProject.projectDir, '../node_modules/react-native-audio-transcoder/android')
 
-include ':react-native-audio-recorder-player'
-project(':react-native-audio-recorder-player').projectDir = new File(rootProject.projectDir, '../node_modules/react-native-audio-recorder-player/android')
+// include ':react-native-audio-recorder-player'
+// project(':react-native-audio-recorder-player').projectDir = new File(rootProject.projectDir, '../node_modules/react-native-audio-recorder-player/android')
 include ':react-native-fs'
 project(':react-native-fs').projectDir = new File(rootProject.projectDir, '../node_modules/react-native-fs/android')
 

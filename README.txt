@@ -1,3 +1,5 @@
+   // "react-native-audio-recorder-player": "^2.1.4",
+    "react-native-audio-transcoder": "^0.3.0",
 
 
 The mobile project contains two files i used for abstraction

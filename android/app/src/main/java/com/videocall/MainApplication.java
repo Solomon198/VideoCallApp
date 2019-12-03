@@ -3,8 +3,8 @@ package com.videocall;
 import android.app.Application;
 
 import com.facebook.react.ReactApplication;
-import com.rnaudiotranscoder.RNAudioTranscoderPackage;
-import com.dooboolab.RNAudioRecorderPlayerPackage;
+// import com.rnaudiotranscoder.RNAudioTranscoderPackage;
+// import com.dooboolab.RNAudioRecorderPlayerPackage;
 import com.rnfs.RNFSPackage;
 import com.inprogress.reactnativeyoutube.ReactNativeYouTube;
 import com.agontuk.RNFusedLocation.RNFusedLocationPackage;
@@ -43,8 +43,8 @@ public class MainApplication extends Application implements ReactApplication {
     protected List<ReactPackage> getPackages() {
       return Arrays.<ReactPackage>asList(
           new MainReactPackage(),
-            new RNAudioTranscoderPackage(),
-            new RNAudioRecorderPlayerPackage(),
+            // new RNAudioTranscoderPackage(),
+            // new RNAudioRecorderPlayerPackage(),
             new RNFSPackage(),
             new ReactNativeYouTube(),
             new SplashScreenReactPackage(),
