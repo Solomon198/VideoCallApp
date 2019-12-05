@@ -2,9 +2,9 @@ import {AsyncStorage,PermissionsAndroid} from 'react-native'
 import firebase from 'react-native-firebase'
 const storage = AsyncStorage;
 var RNFS = require('react-native-fs');
-import AudioRecorderPlayer from 'react-native-audio-recorder-player';
-import { transcode } from 'react-native-audio-transcoder'
-const audioRecorderPlayer = new AudioRecorderPlayer();
+// import AudioRecorderPlayer from 'react-native-audio-recorder-player';
+// import { transcode } from 'react-native-audio-transcoder'
+// const audioRecorderPlayer = new AudioRecorderPlayer();
 
 export var jsonEncode = (data) => JSON.stringify(data);
 export var jsonDecode = (data) => JSON.parse(data);
@@ -89,11 +89,11 @@ export function startRecorder(patientId){
            let path =  RNFS.ExternalStorageDirectoryPath;
         //    let timeStamp = new Date().getTime();
            let fileName = patientId + " " 
-           audioRecorderPlayer.startRecorder(path+"/Call/"+fileName.trim()+".mp4").then((val)=>{
-           resolve({path:val})
-        }).catch((err)=> {
-            reject({message:err.message})
-        })
+        //    audioRecorderPlayer.startRecorder(path+"/Call/"+fileName.trim()+".mp4").then((val)=>{
+        //    resolve({path:val})
+        // }).catch((err)=> {
+        //     reject({message:err.message})
+        // })
        }).catch(err=>reject({err:err.message}))
     })
    }
@@ -102,14 +102,14 @@ export function startRecorder(patientId){
     return new Promise((resolve,reject)=>{
            const myFilePath = file;
           const myNewFile = myFilePath.replace("mp4","mp3");
-          transcode(myFilePath, myNewFile)
-          .then(() =>{
-              console.log(myNewFile)
-               resolve(myNewFile)  
-            }).catch((err)=>{
-                console.log(err)
-                reject(err)    
-            })
+        //   transcode(myFilePath, myNewFile)
+        //   .then(() =>{
+        //       console.log(myNewFile)
+        //        resolve(myNewFile)  
+        //     }).catch((err)=>{
+        //         console.log(err)
+        //         reject(err)    
+        //     })
                
        })
    }
